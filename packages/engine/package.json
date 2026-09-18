@@ -1,5 +1,5 @@
 {
-  "name": "@trolley/engine",
+  "name": "@trolleybench/engine",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -17,7 +17,7 @@
     "build": "tsc -b"
   },
   "dependencies": {
-    "@trolley/spec": "workspace:*",
+    "@trolleybench/spec": "workspace:*",
     "@messageformat/core": "^3.4.0",
     "@messageformat/parser": "^5.1.1"
   }

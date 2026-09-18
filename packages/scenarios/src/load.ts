@@ -1,8 +1,8 @@
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
-import { ScenarioPack, SuiteDef } from "@trolley/spec";
-import { contentHash, normalizeString } from "@trolley/engine";
+import { ScenarioPack, SuiteDef } from "@trolleybench/spec";
+import { contentHash, normalizeString } from "@trolleybench/engine";
 
 export interface LoadedPack {
   pack: ScenarioPack;

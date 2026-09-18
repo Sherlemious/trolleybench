@@ -1,4 +1,4 @@
-import type { MoralFramework } from "@trolley/spec";
+import type { MoralFramework } from "@trolleybench/spec";
 
 /**
  * Framework steering prompts.

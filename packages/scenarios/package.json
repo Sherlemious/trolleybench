@@ -1,5 +1,5 @@
 {
-  "name": "@trolley/scenarios",
+  "name": "@trolleybench/scenarios",
   "version": "0.1.0",
   "type": "module",
   "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
@@ -8,8 +8,8 @@
   "files": ["dist"],
   "scripts": { "build": "tsc -b" },
   "dependencies": {
-    "@trolley/spec": "workspace:*",
-    "@trolley/engine": "workspace:*",
+    "@trolleybench/spec": "workspace:*",
+    "@trolleybench/engine": "workspace:*",
     "yaml": "^2.6.1",
     "zod": "^3.25.0"
   }

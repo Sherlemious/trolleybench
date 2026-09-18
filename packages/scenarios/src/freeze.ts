@@ -1,5 +1,5 @@
-import type { ScenarioInstance, SuiteDef, SuiteLock } from "@trolley/spec";
-import { digestOf } from "@trolley/engine";
+import type { ScenarioInstance, SuiteDef, SuiteLock } from "@trolleybench/spec";
+import { digestOf } from "@trolleybench/engine";
 import type { LoadedPack } from "./load.js";
 import { expandSuite } from "./expand-suite.js";
 

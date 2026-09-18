@@ -4,7 +4,7 @@ import type { ResultRow } from "../src/result.js";
 
 declare const rows: ResultRow[];
 
-// Stand-in for an aggregator in @trolley/analysis.
+// Stand-in for an aggregator in @trolleybench/analysis.
 function utilitarianRate(_scoped: ModeScopedRows): number { return 0; }
 
 // 1. A bare ResultRow[] must NOT satisfy the aggregator's parameter.

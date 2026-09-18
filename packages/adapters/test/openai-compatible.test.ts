@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import type { SubjectSpec } from "@trolley/spec";
+import type { SubjectSpec } from "@trolleybench/spec";
 import { OpenAICompatibleSubject } from "../src/openai-compatible.js";
 import { TransientError } from "../src/types.js";
 

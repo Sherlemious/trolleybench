@@ -13,17 +13,19 @@
     "test:watch": "vitest",
     "typecheck": "tsc -b --noEmit false",
     "trolley": "node apps/cli/dist/index.js",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "dev": "pnpm --filter @trolleybench/web dev",
+    "build:web": "pnpm --filter @trolleybench/web build"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8",
-    "@trolley/spec": "workspace:*",
-    "@trolley/engine": "workspace:*",
-    "@trolley/scenarios": "workspace:*",
-    "@trolley/adapters": "workspace:*",
-    "@trolley/scoring": "workspace:*",
-    "@trolley/runner": "workspace:*"
+    "@trolleybench/spec": "workspace:*",
+    "@trolleybench/engine": "workspace:*",
+    "@trolleybench/scenarios": "workspace:*",
+    "@trolleybench/adapters": "workspace:*",
+    "@trolleybench/scoring": "workspace:*",
+    "@trolleybench/runner": "workspace:*"
   }
 }

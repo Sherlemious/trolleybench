@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { VariationGrid, type ScenarioPack } from "@trolley/spec";
+import { VariationGrid, type ScenarioPack } from "@trolleybench/spec";
 import { loadPackFile } from "../src/load.js";
 import { expandInstances } from "../src/expand-suite.js";
 import { hasErrors, validatePack } from "../src/validate.js";

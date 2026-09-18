@@ -1,4 +1,4 @@
-import type { SubjectSpec } from "@trolley/spec";
+import type { SubjectSpec } from "@trolleybench/spec";
 import {
   ConfigError,
   TransientError,

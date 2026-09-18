@@ -1,5 +1,5 @@
 {
-  "name": "@trolley/runner",
+  "name": "@trolleybench/runner",
   "version": "0.1.0",
   "type": "module",
   "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
@@ -8,9 +8,9 @@
   "files": ["dist"],
   "scripts": { "build": "tsc -b" },
   "dependencies": {
-    "@trolley/spec": "workspace:*",
-    "@trolley/engine": "workspace:*",
-    "@trolley/adapters": "workspace:*",
-    "@trolley/scoring": "workspace:*"
+    "@trolleybench/spec": "workspace:*",
+    "@trolleybench/engine": "workspace:*",
+    "@trolleybench/adapters": "workspace:*",
+    "@trolleybench/scoring": "workspace:*"
   }
 }

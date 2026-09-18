@@ -8,7 +8,7 @@ import type { ResultRow } from "./result.js";
  * nothing about `any`, a runtime-assembled array, or an aggregator that accepts
  * `ResultRow[]` and simply never inspects the mode. So instead:
  *
- *   every aggregate in @trolley/analysis accepts `ModeScoped<M, ResultRow[]>`,
+ *   every aggregate in @trolleybench/analysis accepts `ModeScoped<M, ResultRow[]>`,
  *   and the ONLY way to obtain that type is `partitionByMode()`.
  *
  * The brand symbol is module-private and never exported, so there is no constructor,

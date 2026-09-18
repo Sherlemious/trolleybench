@@ -3,7 +3,7 @@ import type {
   ScenarioInstance,
   ScenarioTemplate,
   VariationAssignment,
-} from "@trolley/spec";
+} from "@trolleybench/spec";
 import { contentHash, normalizeString } from "./canonical.js";
 import { FRAMEWORK_PROMPTS, PERSPECTIVE_HINT } from "./frameworks.js";
 import { render, type RenderContext } from "./render.js";
@@ -20,7 +20,7 @@ export interface InstantiateArgs {
  * Build the render context from the chosen factor levels.
  * Each factor id resolves to its chosen level id, and every level's `values` map is
  * merged in declaration order. Key collisions between levels are a pack authoring
- * error and are rejected by the validator in @trolley/scenarios, not resolved here.
+ * error and are rejected by the validator in @trolleybench/scenarios, not resolved here.
  */
 export function buildContext(template: ScenarioTemplate, cell: Cell): RenderContext {
   const ctx: RenderContext = {};

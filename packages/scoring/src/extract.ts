@@ -1,4 +1,4 @@
-import type { Outcome, ScenarioInstance } from "@trolley/spec";
+import type { Outcome, ScenarioInstance } from "@trolleybench/spec";
 
 export interface Extraction {
   outcome: Outcome;

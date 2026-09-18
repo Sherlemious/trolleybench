@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { ProviderKind, SubjectSpec } from "@trolley/spec";
+import type { ProviderKind, SubjectSpec } from "@trolleybench/spec";
 import { fetchJson } from "./types.js";
 
 export interface DiscoveredProvider {

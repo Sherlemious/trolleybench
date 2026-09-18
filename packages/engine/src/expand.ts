@@ -1,4 +1,4 @@
-import type { Constraint, FactorDef, ScenarioTemplate, VariationGrid, VariationAssignment } from "@trolley/spec";
+import type { Constraint, FactorDef, ScenarioTemplate, VariationGrid, VariationAssignment } from "@trolleybench/spec";
 
 /** One cell of the design matrix: a level id chosen for every factor. */
 export type Cell = Record<string, string>;
@@ -27,7 +27,7 @@ function cartesian(factors: readonly FactorDef[]): Cell[] {
  * A cell is excluded when, for EVERY factor named in the constraint, the cell's
  * chosen level appears in that constraint's list. Constraints referencing a factor
  * the template does not declare never match - that is a validation error, caught in
- * @trolley/scenarios, not silently here.
+ * @trolleybench/scenarios, not silently here.
  */
 export function isExcluded(cell: Cell, constraints: readonly Constraint[]): boolean {
   return constraints.some((constraint) => {

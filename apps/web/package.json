@@ -1,0 +1,22 @@
+{
+  "name": "@trolleybench/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 4319",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@trolleybench/spec": "workspace:*",
+    "@trolleybench/engine": "workspace:*",
+    "@trolleybench/scenarios": "workspace:*",
+    "next": "^15.1.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2"
+  }
+}

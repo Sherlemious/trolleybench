@@ -1,4 +1,4 @@
-import type { SubjectSpec, Transport } from "@trolley/spec";
+import type { SubjectSpec, Transport } from "@trolleybench/spec";
 
 export interface CompletionRequest {
   system?: string | undefined;

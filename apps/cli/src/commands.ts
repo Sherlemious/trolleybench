@@ -7,8 +7,8 @@ import {
   type MoralFramework,
   type ProviderKind,
   type SubjectSpec,
-} from "@trolley/spec";
-import { designSize } from "@trolley/engine";
+} from "@trolleybench/spec";
+import { designSize } from "@trolleybench/engine";
 import {
   expandInstances,
   expandSuite,
@@ -20,9 +20,9 @@ import {
   validatePack,
   verifyAgainstLock,
   type LoadedPack,
-} from "@trolley/scenarios";
-import { createSubject, discoverProviders, readDotEnv, sanitizeId, type Subject } from "@trolley/adapters";
-import { executeRun } from "@trolley/runner";
+} from "@trolleybench/scenarios";
+import { createSubject, discoverProviders, readDotEnv, sanitizeId, type Subject } from "@trolleybench/adapters";
+import { executeRun } from "@trolleybench/runner";
 import { bool, list, num, str, UsageError, type ParsedArgs } from "./args.js";
 
 export const TOOL_VERSION = "0.1.0";

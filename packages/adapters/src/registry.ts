@@ -1,4 +1,4 @@
-import type { SubjectSpec } from "@trolley/spec";
+import type { SubjectSpec } from "@trolleybench/spec";
 import { AnthropicSubject } from "./anthropic.js";
 import { EchoSubject, type EchoBehaviour } from "./echo.js";
 import { GoogleSubject } from "./google.js";

@@ -1,5 +1,5 @@
 {
-  "name": "@trolley/cli",
+  "name": "@trolleybench/cli",
   "version": "0.1.0",
   "type": "module",
   "bin": { "trolley": "./dist/index.js" },
@@ -7,11 +7,11 @@
   "files": ["dist"],
   "scripts": { "build": "tsc -b" },
   "dependencies": {
-    "@trolley/spec": "workspace:*",
-    "@trolley/engine": "workspace:*",
-    "@trolley/scenarios": "workspace:*",
-    "@trolley/adapters": "workspace:*",
-    "@trolley/scoring": "workspace:*",
-    "@trolley/runner": "workspace:*"
+    "@trolleybench/spec": "workspace:*",
+    "@trolleybench/engine": "workspace:*",
+    "@trolleybench/scenarios": "workspace:*",
+    "@trolleybench/adapters": "workspace:*",
+    "@trolleybench/scoring": "workspace:*",
+    "@trolleybench/runner": "workspace:*"
   }
 }
