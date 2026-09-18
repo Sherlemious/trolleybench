@@ -1,0 +1,319 @@
+/* The figure: an animated oblique-projection drawing of the dilemma.
+   Colours derive from the page tokens so both themes stay coherent; the few
+   literal colours are the things that are the same colour in any light — lamps,
+   windows, a heart trace. */
+
+.fig-stage {
+  position: relative;
+  isolation: isolate;
+  border-bottom: 1px solid var(--line-soft);
+  overflow: hidden;
+
+  --grid: color-mix(in srgb, var(--ink) 4.5%, transparent);
+  --grid-major: color-mix(in srgb, var(--ink) 8%, transparent);
+  --bed: var(--surface-2);
+  --ballast: color-mix(in srgb, var(--slate-dim) 22%, transparent);
+  --tie: color-mix(in srgb, var(--slate) 55%, transparent);
+  --rail: #3a4650;
+  --struct: color-mix(in srgb, var(--slate-dim) 38%, var(--surface));
+  --struct-dark: color-mix(in srgb, var(--slate) 70%, var(--ink));
+  --tram-roof: #4f5d6b;
+  --tram-near: #303c48;
+  --tram-far: #232d36;
+  --tram-front: #1b242c;
+  --window: #f2c76b;
+  --lamp: #f5c542;
+  --beam: #f2b73a;
+  --amber: #e39b1f;
+  --green: #3f9f6e;
+  --trace: #23b374;
+  --screen: #0e171c;
+  --person: var(--ink);
+  --shadow: color-mix(in srgb, var(--ink) 22%, transparent);
+  --floor: color-mix(in srgb, var(--surface-2) 55%, transparent);
+  --beam-blend: multiply;
+  --grain-invert: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .fig-stage {
+    --rail: #b4c0c9;
+    --struct: color-mix(in srgb, var(--slate-dim) 55%, var(--surface));
+    --struct-dark: color-mix(in srgb, var(--slate) 55%, var(--ink));
+    --tram-roof: #c0ccd5;
+    --tram-near: #96a4b0;
+    --tram-far: #74828f;
+    --tram-front: #62707d;
+    --trace: #4fe39c;
+    --beam-blend: screen;
+    --grain-invert: 1;
+  }
+}
+:root[data-theme="dark"] .fig-stage {
+  --rail: #b4c0c9;
+  --struct: color-mix(in srgb, var(--slate-dim) 55%, var(--surface));
+  --struct-dark: color-mix(in srgb, var(--slate) 55%, var(--ink));
+  --tram-roof: #c0ccd5;
+  --tram-near: #96a4b0;
+  --tram-far: #74828f;
+  --tram-front: #62707d;
+  --trace: #4fe39c;
+  --beam-blend: screen;
+  --grain-invert: 1;
+}
+
+/* ---- backdrop: drafting grid, vignette, grain ------------------------- */
+.fig-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: var(--surface);
+  background-image:
+    radial-gradient(ellipse 75% 70% at 50% 42%, transparent 35%, color-mix(in srgb, var(--ink) 5%, transparent) 100%),
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 100% 100%, 96px 96px, 96px 96px, 24px 24px, 24px 24px;
+  background-position: 0 0, -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+}
+.fig-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.16;
+  filter: invert(var(--grain-invert));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.fig-stage .scene {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 960 / 324;
+  overflow: visible;
+}
+
+/* ---- entrance ------------------------------------------------------ */
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes draw-in { to { stroke-dashoffset: 0; } }
+
+/* ---- track --------------------------------------------------------- */
+.t-ballast { fill: none; stroke: var(--ballast); stroke-width: 28; stroke-linecap: butt; animation: fade-in 0.7s ease-out both; }
+.t-ties { fill: none; stroke: var(--tie); stroke-width: 16; stroke-dasharray: 2.4 7.6; animation: fade-in 0.9s 0.1s ease-out both; }
+.t-rail { fill: none; stroke: var(--rail); stroke-width: 6.4; stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw-in 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+.t-rail-in { fill: none; stroke: var(--bed); stroke-width: 3.6; stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw-in 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+.blade { stroke: var(--rail); stroke-width: 2.6; stroke-linecap: round; transition: stroke 0.3s; }
+.blade.set { stroke: var(--amber); }
+
+/* ---- people -------------------------------------------------------- */
+.sp-fig { animation: fade-in 0.5s 0.35s ease-out both; }
+.fig { fill: var(--person); transform-box: view-box; transform-origin: 0 0; }
+.fig.you { fill: var(--accent); }
+.shadow { fill: var(--shadow); }
+.you-ring { fill: none; stroke: var(--accent); stroke-width: 1.1; stroke-dasharray: 2.6 2.6; animation: ring-spin 7s linear infinite; }
+@keyframes ring-spin { to { stroke-dashoffset: -52; } }
+
+.fig.struck { animation: fig-fall 0.62s cubic-bezier(0.35, 0.6, 0.25, 1) forwards; }
+@keyframes fig-fall {
+  0% { transform: rotate(0deg); fill: var(--person); opacity: 1; }
+  22% { transform: translate(0, -2.5px) rotate(-12deg); fill: var(--act); opacity: 1; }
+  100% { transform: rotate(88deg); fill: var(--act); opacity: 0.55; }
+}
+.fig.lost { animation: fig-lost 0.9s ease-out forwards; }
+@keyframes fig-lost {
+  0% { fill: var(--person); opacity: 1; }
+  40% { fill: var(--act); opacity: 1; }
+  100% { fill: var(--act); opacity: 0.4; }
+}
+.fig.spared { animation: fig-spared 0.9s ease-out forwards; }
+@keyframes fig-spared {
+  0% { transform: scale(1); fill: var(--person); }
+  35% { transform: translate(0, -2px) scale(1.1); fill: var(--accent); }
+  100% { transform: scale(1); fill: var(--accent); }
+}
+
+/* ---- trolley ------------------------------------------------------- */
+.tram .wall.near { fill: var(--tram-near); }
+.tram .wall.far, .tram .wall.back { fill: var(--tram-far); }
+.tram .wall.front { fill: var(--tram-front); }
+.tram .roof { fill: var(--tram-roof); }
+.tram .roof-vent { fill: color-mix(in srgb, var(--tram-roof) 82%, white); }
+.tram .window { fill: var(--window); opacity: 0.94; }
+.tram .lamp { fill: var(--lamp); filter: drop-shadow(0 0 3px var(--lamp)); }
+.tram-shadow { fill: var(--shadow); filter: blur(3px); transform: translate(4px, 3px); }
+.tram-chassis { fill: color-mix(in srgb, var(--tram-front) 75%, black); }
+.tram .beam { mix-blend-mode: var(--beam-blend); animation: beam-pulse 1.5s ease-in-out infinite; }
+.tram.run .beam, .tram.throw .beam { animation: none; }
+@keyframes beam-pulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+
+/* ---- lever, switch, signal ----------------------------------------- */
+.lever-base { fill: var(--struct-dark); }
+.lever-post { stroke: var(--struct-dark); stroke-width: 3; stroke-linecap: round; }
+.lever-arm { stroke: var(--rail); stroke-width: 2.4; stroke-linecap: round; }
+.lever-knob { fill: var(--act); transition: fill 0.3s; }
+.lever.thrown .lever-knob, .switchbox .lever-knob { fill: var(--amber); }
+.lever.active .lever-knob { animation: knob-pulse 1.4s ease-in-out infinite; }
+@keyframes knob-pulse { 0%, 100% { filter: none; } 50% { filter: drop-shadow(0 0 4px var(--act)); } }
+
+.hit { cursor: pointer; }
+.hit circle { fill: var(--accent); opacity: 0; transition: opacity 0.2s; }
+.hit:hover circle { opacity: 0.14; }
+.hit-label {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  fill: var(--accent);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.hit:hover .hit-label { opacity: 1; }
+
+.signal .post { stroke: var(--struct-dark); stroke-width: 2; }
+.signal .lamp { fill: var(--dead); transition: fill 0.3s; }
+.signal .glow { fill: var(--amber); opacity: 0; transition: opacity 0.3s; }
+.signal.wait .lamp { animation: blink 1.15s steps(1) infinite; }
+.signal.wait .glow { animation: blink-glow 1.15s steps(1) infinite; }
+.signal.act .lamp { fill: var(--amber); }
+.signal.act .glow { opacity: 0.3; }
+.signal.omit .lamp { fill: var(--green); }
+.signal.omit .glow { fill: var(--green); opacity: 0.3; }
+@keyframes blink { 0%, 52% { fill: var(--amber); } 53%, 100% { fill: var(--dead); } }
+@keyframes blink-glow { 0%, 52% { opacity: 0.32; } 53%, 100% { opacity: 0; } }
+
+/* ---- structures ---------------------------------------------------- */
+.pillar { fill: var(--struct-dark); }
+.deck-top { fill: var(--struct); stroke: var(--struct-dark); stroke-width: 0.6; }
+.deck-side, .deck-front { fill: var(--struct-dark); }
+.rail-post, .rail-top { stroke: var(--struct-dark); stroke-width: 1.2; stroke-linecap: round; }
+.flap { fill: var(--struct); stroke: var(--struct-dark); stroke-width: 0.8; stroke-linejoin: round; }
+.gantry .beam-bar { stroke: var(--struct-dark); stroke-width: 5; stroke-linecap: round; }
+.gantry .hanger { stroke: var(--struct-dark); stroke-width: 1.6; }
+.gantry .frame { fill: none; stroke: var(--struct-dark); stroke-width: 1; }
+.struct-box .wall.near { fill: var(--struct); }
+.struct-box .wall.far, .struct-box .wall.back { fill: var(--struct-dark); }
+.struct-box .wall.front { fill: color-mix(in srgb, var(--struct) 55%, var(--struct-dark)); }
+.struct-box .roof { fill: color-mix(in srgb, var(--struct) 80%, white); }
+
+/* ---- annotations --------------------------------------------------- */
+.labels { animation: fade-in 0.7s 0.6s ease-out both; }
+.annot text, .annot-txt {
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  fill: var(--slate);
+  paint-order: stroke fill;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.annot .leader { stroke: var(--slate-dim); stroke-width: 0.8; stroke-dasharray: 2 2; }
+
+/* ---- impact -------------------------------------------------------- */
+.scene.impact { animation: shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+@keyframes shake {
+  10%, 90% { transform: translate(-1px, 0); }
+  20%, 80% { transform: translate(2px, 0); }
+  30%, 50%, 70% { transform: translate(-3px, 1px); }
+  40%, 60% { transform: translate(3px, -1px); }
+}
+
+/* ---- the ward (transplant) ---------------------------------------- */
+.floor { fill: var(--floor); stroke: var(--line); stroke-width: 0.8; animation: fade-in 0.7s ease-out both; }
+.curtain { fill: color-mix(in srgb, var(--accent-soft) 70%, transparent); stroke: var(--accent); stroke-width: 0.8; stroke-dasharray: 3 2; }
+.bed-box .wall.near { fill: color-mix(in srgb, var(--struct) 60%, white); }
+.bed-box .wall.far, .bed-box .wall.back { fill: var(--struct-dark); }
+.bed-box .wall.front { fill: var(--struct); }
+.bed-box .roof { fill: color-mix(in srgb, var(--surface) 70%, var(--struct)); stroke: var(--struct-dark); stroke-width: 0.5; }
+.bed { animation: fade-in 0.5s 0.3s ease-out both; }
+.bed .pillow { fill: var(--surface); stroke: var(--struct-dark); stroke-width: 0.5; }
+.bed .blanket { fill: var(--omit-soft); stroke: var(--omit); stroke-width: 0.6; transition: fill 0.5s, stroke 0.5s; }
+.bed .head { fill: var(--person); transition: fill 0.5s, opacity 0.5s; }
+.bed.struck .blanket { fill: var(--dead-soft); stroke: var(--dead); }
+.bed.struck .head { fill: var(--act); opacity: 0.45; }
+.bed.spared .blanket { fill: var(--accent-soft); stroke: var(--accent); }
+.bed.spared .head { fill: var(--accent); }
+
+.mon { animation: fade-in 0.5s 0.5s ease-out both; }
+.mon .post { stroke: var(--struct-dark); stroke-width: 1.4; }
+.mon .screen { fill: var(--screen); stroke: var(--struct-dark); stroke-width: 0.8; }
+.mon .trace { fill: none; stroke: var(--trace); stroke-width: 1.1; stroke-linejoin: round; }
+.mon .flat { stroke: var(--act); stroke-width: 1.1; display: none; }
+.mon .sweep { stroke: var(--trace); stroke-width: 1.2; opacity: 0.45; animation: sweep 1.5s linear infinite; }
+.mon.lost .trace, .mon.lost .sweep { display: none; }
+.mon.lost .flat { display: block; }
+@keyframes sweep { from { transform: translateX(0); } to { transform: translateX(22px); } }
+
+/* ---- ledger -------------------------------------------------------- */
+.ledger {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  align-items: baseline;
+  padding: 9px 18px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--surface);
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  color: var(--slate);
+}
+.fig-no { font-family: var(--f-text); font-style: italic; font-size: 14.5px; color: var(--ink); }
+.fig-title { color: var(--ink-2); }
+.fig-factors { color: var(--slate-dim); }
+.fig-status { margin-left: auto; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.fig-status::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 7px;
+  background: var(--amber);
+  animation: blink-dot 1.15s steps(1) infinite;
+}
+.fig-status.act::before { background: var(--act); animation: none; }
+.fig-status.omit::before { background: var(--omit); animation: none; }
+.fig-status.done { color: var(--ink); font-weight: 500; }
+@keyframes blink-dot { 0%, 52% { opacity: 1; } 53%, 100% { opacity: 0.25; } }
+@media (max-width: 620px) {
+  .fig-status { margin-left: 0; flex-basis: 100%; }
+}
+
+/* ---- controls under the options ------------------------------------ */
+.replay {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+.replay button {
+  font: inherit;
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  padding: 5px 10px;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.replay button:hover { border-color: var(--slate-dim); color: var(--ink); }
+.replay button:disabled { opacity: 0.45; cursor: default; }
+.replay .sub { font-size: 12px; color: var(--slate); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fig-stage *, .fig-stage *::before, .fig-stage *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
