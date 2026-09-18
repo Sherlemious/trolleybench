@@ -16,9 +16,9 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
+      # No `version:` here. pnpm/action-setup errors out if it is pinned in BOTH
+      # places, and package.json's `packageManager` is the single source of truth.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -56,9 +56,9 @@ jobs:
       - name: Force CRLF in the working tree
         run: git config --global core.autocrlf true
       - uses: actions/checkout@v4
+      # No `version:` here. pnpm/action-setup errors out if it is pinned in BOTH
+      # places, and package.json's `packageManager` is the single source of truth.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 22
