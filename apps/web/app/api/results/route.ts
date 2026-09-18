@@ -33,27 +33,31 @@ const GROUPABLE: readonly GroupableField[] = [
  * has to choose one. Pooling has to be a deliberate act, and this API does not offer it.
  */
 export async function GET(request: Request): Promise<NextResponse> {
-  const connection = await getDb();
-  if (!connection) {
-    return NextResponse.json(
-      {
-        database: "not_configured",
-        detail:
-          "No DATABASE_URL is set on this deployment. The scenario workbench does not " +
-          "need one; stored run results do.",
-      },
-      { status: 503 },
-    );
-  }
-
-  const url = new URL(request.url);
-  const mode = url.searchParams.get("mode");
-
-  const { listRuns, modesPresent, outcomeBreakdown, ratesBy } = await import(
-    "@trolleybench/store"
-  );
-
+  // Everything, connection included, inside the try. A throw from `connect()` that
+  // escaped to Next's default handler once put the whole connection string - password
+  // and all - into the platform's runtime logs, because postgres.js reports a malformed
+  // URL with the URL as `input`. Nothing on this path may reach the logger unredacted.
   try {
+    const connection = await getDb();
+    if (!connection) {
+      return NextResponse.json(
+        {
+          database: "not_configured",
+          detail:
+            "No DATABASE_URL is set on this deployment. The scenario workbench does not " +
+            "need one; stored run results do.",
+        },
+        { status: 503 },
+      );
+    }
+
+    const url = new URL(request.url);
+    const mode = url.searchParams.get("mode");
+
+    const { listRuns, modesPresent, outcomeBreakdown, ratesBy } = await import(
+      "@trolleybench/store"
+    );
+
     if (!mode) {
       const [modes, runs] = await Promise.all([
         modesPresent(connection.db),
@@ -104,10 +108,20 @@ export async function GET(request: Request): Promise<NextResponse> {
       ...(groups ? { by, groups } : {}),
     });
   } catch (cause) {
-    // Never leak a connection string in an error body.
-    const message = cause instanceof Error ? cause.message : String(cause);
+    // Allow-list rather than scrub. A driver error can carry the connection string in
+    // places a regex over `.message` never sees - `ERR_INVALID_URL` puts it on `input` -
+    // so the response says what kind of failure it was and nothing more.
+    const name = cause instanceof Error ? cause.name : "Error";
+    const safe = name === "MissingDatabaseUrl" || name === "InvalidDatabaseUrl";
     return NextResponse.json(
-      { database: "error", detail: message.replace(/postgres(ql)?:\/\/\S+/gi, "[redacted]") },
+      {
+        database: "error",
+        error: name,
+        detail: safe
+          ? (cause as Error).message
+          : "The query failed. Details are in the server logs, withheld here because " +
+            "database errors can carry the connection string.",
+      },
       { status: 500 },
     );
   }
