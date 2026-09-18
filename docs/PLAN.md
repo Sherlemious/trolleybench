@@ -274,6 +274,36 @@ reimplemented).
 
 ---
 
+## Deployment
+
+Vercel project `web`, Neon project `nameless-tooth-38509020` (branch `production`).
+
+**The load-bearing setting is not in this repo.** Vercel's *Root Directory* must be
+`apps/web`, and that lives in project settings where nothing in git can record it.
+Anyone re-importing this repo will hit the same wall, so: the root `package.json` has
+no `next` dependency, so a Root Directory of `.` makes Vercel report *No Next.js
+version detected*. Pointing `outputDirectory` at `apps/web/.next` looks like the fix
+and is not — it is then the only thing telling Vercel where the app lives, and the same
+value gets appended a second time, so the build succeeds and then dies looking for
+`/vercel/path0/apps/web/apps/web/.next`. Both errors are one mismatch seen from two
+sides. With Root Directory set correctly every framework default is right on its own
+and no `vercel.json` is needed, which is why there isn't one.
+
+`apps/web/package.json` builds with `tsc -b ../.. && next build`. The `tsc -b` is not
+optional: workspace packages resolve through `main`/`types` into `dist/`, which is
+gitignored, so without it Vercel cannot resolve `@trolleybench/scenarios` at all.
+
+`DATABASE_URL` is set on the Production environment and points at Neon's **pooled**
+endpoint (`-pooler` in the hostname). `connect()` already sets `prepare: false`, which
+is required through a pooler; `apps/web/lib/db.ts` caches one pool of `max: 1` per
+lambda instance, because the fan-out belongs to the pooler rather than to each lambda.
+
+The database is optional by construction. The workbench prerenders from `content/` and
+nothing touching Postgres sits in that build path, so a deployment with no
+`DATABASE_URL` still serves the whole site and returns 503 from `/api/results` alone.
+
+---
+
 ## Governance
 
 - Human subjects: consent screen, no PII, IRB guidance, export and delete. The workbench
