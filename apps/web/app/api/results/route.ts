@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { ElicitationMode } from "@trolleybench/spec";
+import { ElicitationMode } from "@trolleybench/spec";
 import type { GroupableField } from "@trolleybench/store";
 import { getDb } from "../../../lib/db";
 
@@ -69,8 +69,19 @@ export async function GET(request: Request): Promise<NextResponse> {
       });
     }
 
+    // Parsed, never cast. An unrecognised mode has to be a 400: casting it through
+    // would return 200 with a zeroed breakdown, which reads as "this model never acted"
+    // rather than "you asked for a mode that does not exist".
+    const parsed = ElicitationMode.safeParse(mode);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: `not an elicitation mode: ${mode}`, modes: ElicitationMode.options },
+        { status: 400 },
+      );
+    }
+
     const filter = {
-      mode: mode as ElicitationMode,
+      mode: parsed.data,
       ...(url.searchParams.get("run") ? { runId: url.searchParams.get("run")! } : {}),
     };
 
