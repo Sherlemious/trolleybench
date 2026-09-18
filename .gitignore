@@ -3,11 +3,12 @@ dist/
 .next/
 next-env.d.ts
 *.tsbuildinfo
-.env
-.env.local
 .DS_Store
 runs/
 .turbo/
 coverage/
 drizzle/
 .neon
+.vercel
+
+.env*
