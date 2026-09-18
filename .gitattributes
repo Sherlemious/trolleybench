@@ -1,0 +1,6 @@
+# Hash stability depends on canonical line endings. Never let git rewrite these.
+* text=auto eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+*.json text eol=lf
+*.md   text eol=lf

@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "dist" },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../../packages/spec" }, { "path": "../../packages/engine" },
+    { "path": "../../packages/scenarios" }, { "path": "../../packages/adapters" },
+    { "path": "../../packages/scoring" }, { "path": "../../packages/runner" }
+  ]
+}

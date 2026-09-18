@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # Build, test and content-validate on every platform a contributor might use.
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      # The ModeScoped brand (invariant 1) is a compile-time guarantee, so it is
+      # checked by the type-checker rather than by a runtime assertion.
+      - name: Typecheck invariant assertions
+        run: pnpm exec tsc -p packages/spec/tsconfig.test.json
+
+      - run: pnpm exec vitest run
+
+      - name: Validate scenario packs
+        run: node apps/cli/dist/index.js validate
+
+      # THE PHASE 0 GATE. The lock is committed from one machine; every platform
+      # rebuilds the suite and must arrive at byte-identical instance hashes. If
+      # Windows and Linux ever disagree, exactly one of these jobs goes red.
+      - name: Verify frozen suite digest
+        run: node apps/cli/dist/index.js verify content/suites/canon-v0.yaml
+
+      # A run must complete with no keys, no network and no config at all.
+      - name: Offline end-to-end run
+        run: node apps/cli/dist/index.js run --pack classic --model echo --provider echo --limit 8 --run-id ci
+
+  # The same gate under a CRLF checkout - the actual configuration a Windows
+  # contributor gets by default, and the classic way content hashing dies.
+  hash-parity-crlf:
+    name: hash parity (forced CRLF checkout)
+    runs-on: windows-latest
+    steps:
+      - name: Force CRLF in the working tree
+        run: git config --global core.autocrlf true
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Confirm the working tree really is CRLF
+        shell: bash
+        run: |
+          if grep -q $'\r' content/packs/classic/pack.yaml; then
+            echo "working tree is CRLF, as intended for this job"
+          else
+            echo "::error::expected a CRLF working tree; this job is not testing what it claims"
+            exit 1
+          fi
+
+      - name: Verify frozen suite digest despite CRLF
+        run: node apps/cli/dist/index.js verify content/suites/canon-v0.yaml

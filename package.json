@@ -1,0 +1,29 @@
+{
+  "name": "trolley-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.23.0",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "tsc -b && tsc -p packages/spec/tsconfig.test.json && vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b --noEmit false",
+    "trolley": "node apps/cli/dist/index.js",
+    "test:unit": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "@trolley/spec": "workspace:*",
+    "@trolley/engine": "workspace:*",
+    "@trolley/scenarios": "workspace:*",
+    "@trolley/adapters": "workspace:*",
+    "@trolley/scoring": "workspace:*",
+    "@trolley/runner": "workspace:*"
+  }
+}
