@@ -150,7 +150,9 @@ their data.
 
 ## Licence
 
-Code is Apache-2.0. Authored scenario content is CC-BY-4.0.
+Code is [Apache-2.0](LICENSE). Authored scenario content is
+[CC-BY-4.0](CONTENT-LICENSE). Third-party datasets are fetched by loaders and stay
+under their own licences.
 
 ---
 

@@ -1,0 +1,11 @@
+Scenario content in `content/` is licensed under
+Creative Commons Attribution 4.0 International (CC BY 4.0).
+
+  https://creativecommons.org/licenses/by/4.0/
+
+This covers the authored scenario packs, suite definitions and bibliography.
+It does NOT cover third-party datasets, which are fetched by loaders at runtime
+and remain under their own licences - see each loader for the upstream notice.
+
+Source code in `packages/`, `apps/` and `python/` is licensed under Apache-2.0;
+see LICENSE.
