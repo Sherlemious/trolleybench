@@ -169,7 +169,7 @@ pnpm workspaces. `@trolleybench/spec` is the only universal dependency.
 
 ## Status
 
-### Phase 0 — complete
+### Phase 0 — built, exit criteria still open
 
 Spec, engine, scenario packs, adapters, runner, CLI, content hashing, suite freezing.
 111 tests.
@@ -180,9 +180,17 @@ Exit criteria, honestly assessed:
   exercised against a real local model* — the dev machine has no Ollama and no API keys.
   The OpenAI-compatible adapter is verified over a real socket against a stub speaking
   the protocol Ollama/vLLM/LM Studio expose, so the path is tested by proxy, not in situ.
-- **Cross-platform hash stability.** Met. Proven locally for both real failure modes
-  (CRLF checkout, NFD Unicode) and gated in CI on ubuntu/windows/macOS plus a forced-CRLF
-  job. A one-word content edit correctly invalidated exactly the 32 affected instances.
+- **Cross-platform hash stability.** *Not met.* Proven locally for both real failure
+  modes (CRLF checkout, NFD Unicode) — a one-word content edit correctly invalidated
+  exactly the 32 affected instances — but the CI gate that proves it across machines has
+  never executed. `pnpm/action-setup` was given `version: 10` in the workflow while
+  `packageManager` was set in package.json; it refuses to run when both are present, so
+  every job on every platform died at step two and reported red for a reason that had
+  nothing to do with hashing. Fixed 2026-09-18. This criterion stays open until a green
+  run on ubuntu/windows/macOS plus the forced-CRLF job is on record.
+
+  The lesson is about the gate, not the bug: a red check that nobody reads is worth the
+  same as no check. Both Phase 0 exit criteria are still open.
 
 Three bugs found and fixed during Phase 0, all of which produced *plausible-looking wrong
 numbers* rather than crashes:
