@@ -15,7 +15,9 @@
     "trolley": "node apps/cli/dist/index.js",
     "test:unit": "vitest run",
     "dev": "pnpm --filter @trolleybench/web dev",
-    "build:web": "pnpm --filter @trolleybench/web build"
+    "build:web": "pnpm --filter @trolleybench/web build",
+    "verify:suites": "node apps/cli/dist/index.js verify content/suites/canon-v0.yaml",
+    "verify:crlf": "node scripts/to-crlf.mjs content && node apps/cli/dist/index.js verify content/suites/canon-v0.yaml && git checkout -- content"
   },
   "devDependencies": {
     "@trolleybench/adapters": "workspace:*",

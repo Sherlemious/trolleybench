@@ -88,8 +88,8 @@ returns a ranked view of levels. **Ranking is what we prevent; measurement is th
 
 **4. Content-addressed hashing and suite freezing ship now**, not with the leaderboard.
 Canonical form normalizes key order, CRLF and Unicode to NFC, so a suite frozen on Linux
-verifies byte-identically on Windows. CI enforces this on three platforms plus a forced
-CRLF checkout.
+verifies byte-identically on Windows. Checked on ubuntu, windows and macOS on
+2026-09-18; `pnpm verify:suites` and `pnpm verify:crlf` re-run those checks locally.
 
 ---
 

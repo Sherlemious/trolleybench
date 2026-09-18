@@ -92,8 +92,9 @@ measurement is the point.
 
 **4. Content-addressed hashing and suite freezing shipped in Phase 0.** Canonical form
 normalizes key order, CRLF and Unicode to NFC, so a suite frozen on Linux verifies
-byte-identically on Windows. CI enforces this across three platforms plus a forced CRLF
-checkout.
+byte-identically on Windows. Checked across three platforms on 2026-09-18 and
+re-runnable with `pnpm verify:suites` / `pnpm verify:crlf`; see Status for why it is
+no longer gated automatically.
 
 ---
 
@@ -180,29 +181,32 @@ Exit criteria, honestly assessed:
   exercised against a real local model* — the dev machine has no Ollama and no API keys.
   The OpenAI-compatible adapter is verified over a real socket against a stub speaking
   the protocol Ollama/vLLM/LM Studio expose, so the path is tested by proxy, not in situ.
-- **Cross-platform hash stability.** **Met, 2026-09-18** — and only as of that date.
-  `content/suites/canon-v0.yaml` rebuilds to digest `sha256:0c32b994…` on
+- **Cross-platform hash stability.** **Proven once, 2026-09-18. No longer gated.**
+  `content/suites/canon-v0.yaml` rebuilt to digest `sha256:0c32b994…` on
   ubuntu-latest, windows-latest and macos-latest, and again on Windows after every
-  content file is deliberately rewritten to CRLF.
+  content file was deliberately rewritten to CRLF. That result stands; what no longer
+  exists is the gate that would catch the next regression.
 
-  It had never been proven before, and the reason is worth keeping. The workflow pinned
-  `version: 10` for `pnpm/action-setup` while package.json already set
-  `packageManager`; the action refuses to run when both are present, so every job on
-  every platform died at step two. CI had been red since the repo was created, for a
-  reason with nothing to do with hashing, and the red was being read as noise.
+  The checks survive as commands rather than automation — `pnpm verify:suites` and
+  `pnpm verify:crlf` (the latter corrupts `content/` to CRLF, verifies, and restores).
+  Run them before freezing a suite or merging content, on more than one OS if you can.
+  A single machine cannot prove cross-platform stability, so treat this criterion as
+  met for today's tree and unproven for every tree after it.
 
-  Fixing that exposed a second problem underneath: the CRLF job was not a test. It set
+  Worth keeping, because the history is the argument for ever putting the gate back:
+  the workflow pinned `version: 10` for `pnpm/action-setup` while package.json already
+  set `packageManager`, and the action refuses to run when both are present. Every job
+  on every platform died at step two. CI was red from the day the repo was created, for
+  a reason with nothing to do with hashing, and the red was read as noise — so the
+  criterion was recorded as met on the strength of a gate that had never executed.
+
+  Fixing it exposed a second problem underneath: the CRLF job was not a test. It set
   `core.autocrlf true` before checkout, but `.gitattributes` pins `eol=lf` and
-  `.gitattributes` wins — so the tree came out LF and the job asserted nothing. Its own
-  guard step caught this and failed honestly rather than passing green. It now rewrites
-  `content/` to CRLF itself (`scripts/to-crlf.mjs`) and demands the same digest, which
-  tests the canonicalizer rather than a git setting. The guard moved into that script
-  because a shell test for a CR byte reports no match on Git Bash under
-  windows-latest even when the bytes are plainly CR LF — the shell version of that
-  guard would have passed without checking anything.
+  `.gitattributes` wins, so the tree came out LF and the job asserted nothing. Its own
+  guard step caught that and failed honestly rather than passing green.
 
-  Two lessons, both about gates rather than bugs: a red check nobody reads is worth
-  the same as no check, and a green check that asserts nothing is worth less than that.
+  Two lessons, both about gates rather than bugs: a red check nobody reads is worth the
+  same as no check, and a green check that asserts nothing is worth less than that.
 
 Three bugs found and fixed during Phase 0, all of which produced *plausible-looking wrong
 numbers* rather than crashes:
