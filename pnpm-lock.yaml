@@ -81,6 +81,9 @@ importers:
       '@trolleybench/spec':
         specifier: workspace:*
         version: link:../../packages/spec
+      '@trolleybench/store':
+        specifier: workspace:*
+        version: link:../../packages/store
       next:
         specifier: ^15.1.3
         version: 15.5.25(@types/node@22.20.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
