@@ -1,0 +1,24 @@
+{
+  "name": "@trolleybench/store",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "migrations"],
+  "scripts": {
+    "build": "tsc -b",
+    "generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@trolleybench/spec": "workspace:*",
+    "@trolleybench/engine": "workspace:*",
+    "@trolleybench/runner": "workspace:*",
+    "drizzle-orm": "^0.38.2",
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.2.14",
+    "drizzle-kit": "^0.30.1"
+  }
+}

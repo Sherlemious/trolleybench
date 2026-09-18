@@ -9,6 +9,7 @@ import {
   cmdValidate,
   cmdVerify,
 } from "./commands.js";
+import { cmdDb } from "./db-commands.js";
 
 const HELP = `trolley ${TOOL_VERSION} - moral-dilemma experiment construction kit
 
@@ -22,6 +23,7 @@ COMMANDS
   run                     Run a benchmark and write results as JSONL
   freeze <suite.yaml>     Pin a suite to an exact set of instance hashes
   verify <suite.yaml>     Check a suite still matches its committed lock
+  db <subcommand>         Store and query results in Postgres (init/import/runs/stats)
 
 COMMON OPTIONS
   --pack-dir <dir>        Where packs live (default: content/packs)
@@ -55,6 +57,9 @@ EXAMPLES
   trolley run --pack classic --model echo --provider echo
   trolley run --suite content/suites/canon-v0.yaml --model claude-sonnet-5
   trolley freeze content/suites/canon-v0.yaml
+  trolley db init
+  trolley db import runs/
+  trolley db stats --mode prompt --by moral_framework
 
 Keys are read from the environment or a local .env - they are never transmitted
 anywhere except to the provider you selected.
@@ -85,6 +90,8 @@ async function main(): Promise<number> {
       return cmdFreeze(args);
     case "verify":
       return cmdVerify(args);
+    case "db":
+      return cmdDb(args);
     default:
       console.error(`unknown command '${args.command}'\n`);
       console.error(HELP);

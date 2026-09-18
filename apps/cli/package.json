@@ -2,16 +2,23 @@
   "name": "@trolleybench/cli",
   "version": "0.1.0",
   "type": "module",
-  "bin": { "trolley": "./dist/index.js" },
+  "bin": {
+    "trolley": "./dist/index.js"
+  },
   "main": "./dist/index.js",
-  "files": ["dist"],
-  "scripts": { "build": "tsc -b" },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b"
+  },
   "dependencies": {
     "@trolleybench/spec": "workspace:*",
     "@trolleybench/engine": "workspace:*",
     "@trolleybench/scenarios": "workspace:*",
     "@trolleybench/adapters": "workspace:*",
     "@trolleybench/scoring": "workspace:*",
-    "@trolleybench/runner": "workspace:*"
+    "@trolleybench/runner": "workspace:*",
+    "@trolleybench/store": "workspace:*"
   }
 }

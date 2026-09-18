@@ -20,6 +20,9 @@
       "path": "./packages/runner"
     },
     {
+      "path": "./packages/store"
+    },
+    {
       "path": "./apps/cli"
     }
   ]
