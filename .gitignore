@@ -10,3 +10,4 @@ runs/
 .turbo/
 coverage/
 drizzle/
+.neon

@@ -18,15 +18,19 @@
     "build:web": "pnpm --filter @trolleybench/web build"
   },
   "devDependencies": {
+    "@trolleybench/adapters": "workspace:*",
+    "@trolleybench/engine": "workspace:*",
+    "@trolleybench/runner": "workspace:*",
+    "@trolleybench/scenarios": "workspace:*",
+    "@trolleybench/scoring": "workspace:*",
+    "@trolleybench/spec": "workspace:*",
+    "@trolleybench/store": "workspace:*",
     "@types/node": "^22.10.0",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8",
-    "@trolleybench/spec": "workspace:*",
-    "@trolleybench/engine": "workspace:*",
-    "@trolleybench/scenarios": "workspace:*",
-    "@trolleybench/adapters": "workspace:*",
-    "@trolleybench/scoring": "workspace:*",
-    "@trolleybench/runner": "workspace:*",
-    "@trolleybench/store": "workspace:*"
+    "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "@neon/config": "^1.7.2",
+    "@neon/env": "^1.4.3"
   }
 }
