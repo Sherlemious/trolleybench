@@ -97,6 +97,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.2
         version: 19.3.0(@types/react@19.3.0)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
 
   packages/adapters:
     dependencies:
