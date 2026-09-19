@@ -220,27 +220,6 @@ numbers* rather than crashes:
    run would have reported a 100% act rate with zero refusals. `rating` is now its own
    outcome, excluded from choice-rate denominators.
 
-### Phase 2 — started early (the workbench)
-
-`apps/web` is a Next.js 15 scenario workbench. It reads `content/` on the server rather
-than a committed export, so it cannot drift from what the CLI runs. Change a factor,
-framework or option order and the stimulus plus its instance hash recompute; the design
-matrix strikes out excluded cells and names the constraint responsible; citations carry
-`unverified` badges. Prerenders fully static — no database, no worker — which is why it
-deploys to Vercel as-is.
-
-Each stimulus is headed by **the figure**: an animated oblique-projection drawing of the
-dilemma (`apps/web/app/Scene.tsx`), derived from the template's mechanism and the chosen
-cell's factor values, so it cannot depict something the rendered text does not say. The
-trolley enters, waits at the decision point, and choosing an option — or pulling the
-lever in the drawing — plays the outcome out. Switch, footbridge, loop, trapdoor and the
-transplant ward each have a scene; `av_swerve` does not yet. The echo subject's recorded
-choice can be replayed for comparison. This is the seed of the human-playable surface
-from the locked decisions, minus the consent flow.
-
-Not yet built: the factor explorer across languages (needs `i18n`), the results explorer
-over real runs, and the consented human-baseline flow.
-
 ### Phase 1 — analysis implemented and validated; criterion still open
 
 `packages/analysis` ships AMCE with cluster-bootstrapped intervals, option-order
@@ -282,7 +261,22 @@ Three findings worth keeping:
 
 ### Phase 2 — workbench and results explorer
 
-`/` is the scenario workbench (above). `/results` browses a result set: AMCE forest
+**`/` — the scenario workbench.** `apps/web` reads `content/` on the server rather
+than a committed export, so the browser cannot drift from what the CLI runs. Change a
+factor, framework or option order and the stimulus plus its instance hash recompute; the
+design matrix strikes out excluded cells and names the constraint responsible; citations
+carry `unverified` badges.
+
+Each stimulus is headed by **the figure**: an animated oblique-projection drawing of the
+dilemma (`apps/web/app/Scene.tsx`), derived from the template's mechanism and the chosen
+cell's factor values, so it cannot depict something the rendered text does not say. The
+trolley enters, waits at the decision point, and choosing an option — or pulling the
+lever in the drawing — plays the outcome out. Switch, footbridge, loop, trapdoor and the
+transplant ward each have a scene; `av_swerve` does not yet. The echo subject's recorded
+choice can be replayed for comparison. This is the seed of the human-playable surface
+from the locked decisions, minus the consent flow.
+
+**`/results` — the results explorer.** Browses a result set: AMCE forest
 plots per design axis, option-order consistency, and where refusal concentrates. Both
 prerender statically, and the results page recomputes every figure through the same
 `@trolleybench/analysis` calls `trolley analyze` makes, so a number on the page and a
@@ -358,94 +352,6 @@ lambda instance, because the fan-out belongs to the pooler rather than to each l
 The database is optional by construction. The workbench prerenders from `content/` and
 nothing touching Postgres sits in that build path, so a deployment with no
 `DATABASE_URL` still serves the whole site and returns 503 from `/api/results` alone.
-
----
-
-## Governance
-
-- Human subjects: consent screen, no PII, IRB guidance, export and delete. The workbench
-  currently keeps a viewer's own answers in `localStorage` only and collects nothing —
-  deliberately, because collecting strangers' moral judgements without a consent flow is
-  exactly what Phase 4 exists to do properly.
-- Bias-audit output is a sensitivity coefficient with an interpretation note, never a ranking.
-- Licensing: code Apache-2.0, authored content CC-BY-4.0, third-party data under its own terms.
-
-## Open items
-
-- **Verify every citation** before flipping `verified: true`.
-- **Confirm Moral Machine data licensing** with the authors, or stay loader-only permanently.
-- **Decide where the private held-out split lives.** It cannot sit in a public repo, and
-  the Phase 5 leaderboard depends on it.
-- **Run against a real local model** to close the Phase 0 exit criterion in situ.
-\r'` reports no match on Git Bash under windows-latest even when the
-  bytes are plainly CR LF — the shell version would have passed without checking anything.
-
-  Two lessons, both about gates rather than bugs: a red check nobody reads is worth the
-  same as no check, and a green check that asserts nothing is worth less than that.
-
-Three bugs found and fixed during Phase 0, all of which produced *plausible-looking wrong
-numbers* rather than crashes:
-
-1. A regex ICU parser read plural branch bodies (`{n, plural, one{person}}`) as argument
-   references and emitted confident, bogus validation errors. Replaced with an AST walk.
-2. `matchLabel` inverted negated answers. "I would not operate on the healthy person"
-   scored as *operating*, because the act label is the longer string in that pair and
-   longest-first ordering offers no protection. Negation guard added.
-3. `extractRating` returned `act` for every Likert response, so any `--formats likert`
-   run would have reported a 100% act rate with zero refusals. `rating` is now its own
-   outcome, excluded from choice-rate denominators.
-
-### Phase 2 — started early (the workbench)
-
-`apps/web` is a Next.js 15 scenario workbench. It reads `content/` on the server rather
-than a committed export, so it cannot drift from what the CLI runs. Change a factor,
-framework or option order and the stimulus plus its instance hash recompute; the design
-matrix strikes out excluded cells and names the constraint responsible; citations carry
-`unverified` badges. Prerenders fully static — no database, no worker — which is why it
-deploys to Vercel as-is.
-
-Each stimulus is headed by **the figure**: an animated oblique-projection drawing of the
-dilemma (`apps/web/app/Scene.tsx`), derived from the template's mechanism and the chosen
-cell's factor values, so it cannot depict something the rendered text does not say. The
-trolley enters, waits at the decision point, and choosing an option — or pulling the
-lever in the drawing — plays the outcome out. Switch, footbridge, loop, trapdoor and the
-transplant ward each have a scene; `av_swerve` does not yet. The echo subject's recorded
-choice can be replayed for comparison. This is the seed of the human-playable surface
-from the locked decisions, minus the consent flow.
-
-Not yet built: the factor explorer across languages (needs `i18n`), the results explorer
-over real runs, and the consented human-baseline flow.
-
-### Remaining phases
-
-- **Phase 1.** Analysis — AMCE with bootstrap CIs, CNI parameters, consistency,
-  steerability, refusal profiles. Inspect AI exporter. *This is the next priority: the
-  platform currently produces rows nobody can yet analyse.*
-- **Phase 3.** MCP — `trolley-subject` (the agent acts), `trolley-lab` (researcher
-  console), and the Subject Provider Protocol (they run a tiny MCP server wrapping their
-  model; our runner is the client, so no adapter code from us, ever).
-- **Phase 4.** Hosted API, worker queue, shared results, consented human baselines.
-  *The storage layer lands early, ahead of the rest of this phase.*
-- **Phase 5.** Frozen-suite leaderboard, community packs, Python client, paper library,
-  `cni` and `av-conjoint` packs.
-
----
-
-## Launch parameters
-
-**Languages.** English, Arabic, Chinese, Spanish, French, German, Japanese, Hindi. Every
-translation carries translator provenance and a back-translation check — the
-foreign-language effect is a *finding we intend to measure*, so translation quality is a
-confound to control, not a detail. Narratives are ICU MessageFormat rather than string
-interpolation because Arabic has six plural categories.
-
-**Moral frameworks.** none/baseline, act- and rule-utilitarian, Kantian deontological,
-virtue ethics, Scanlonian contractualism, Rawlsian veil, care ethics, Ubuntu, Confucian
-role ethics, Islamic maqāṣid, Buddhist, divine command, moral particularism.
-
-**Packs.** `classic` (shipped — the Foot/Thomson canon plus the personal-force
-dissociation), `cni` (linked quartets), `av-conjoint` (Moral Machine's nine dimensions,
-reimplemented).
 
 ---
 
