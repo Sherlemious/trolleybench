@@ -75,9 +75,15 @@ importers:
 
   apps/web:
     dependencies:
+      '@trolleybench/analysis':
+        specifier: workspace:*
+        version: link:../../packages/analysis
       '@trolleybench/engine':
         specifier: workspace:*
         version: link:../../packages/engine
+      '@trolleybench/runner':
+        specifier: workspace:*
+        version: link:../../packages/runner
       '@trolleybench/scenarios':
         specifier: workspace:*
         version: link:../../packages/scenarios

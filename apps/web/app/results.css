@@ -1,0 +1,241 @@
+/* Results explorer. Uses the workbench's tokens throughout - no new palette, because
+   this is the same instrument seen from a different angle, not a different product. */
+
+.mast .sub {
+  font-family: var(--f-ui);
+  font-weight: 400;
+  font-size: 0.5em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--slate);
+  vertical-align: 0.4em;
+}
+
+.notice.warn {
+  border-left-color: var(--refusal);
+  background: var(--refusal-soft);
+}
+
+.panel {
+  margin: 1.75rem 0;
+  padding: 1.25rem 1.35rem 1.4rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.panel.alarm {
+  border-color: var(--act);
+  box-shadow: inset 3px 0 0 var(--act);
+}
+
+.panel > h2 {
+  margin: 0 0 0.9rem;
+  font-family: var(--f-ui);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 2.25rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 7.5rem;
+}
+
+.stat-label {
+  font-family: var(--f-ui);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.stat-value {
+  font-family: var(--f-mono);
+  font-size: 1.45rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.stat-note {
+  font-family: var(--f-ui);
+  font-size: 0.74rem;
+  color: var(--slate-dim);
+}
+
+.foot-note {
+  margin: 0.9rem 0 0;
+  font-family: var(--f-text);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--slate);
+  max-width: 68ch;
+}
+
+.axis-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+}
+
+.axis-tab {
+  padding: 0.32rem 0.7rem;
+  font-family: var(--f-ui);
+  font-size: 0.78rem;
+  color: var(--slate);
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.axis-tab:hover { color: var(--ink); border-color: var(--line); }
+.axis-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.axis-tab.on {
+  color: var(--surface);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.plot { margin: 0 0 1.1rem; }
+
+.plot svg { display: block; max-width: 100%; height: auto; overflow: visible; }
+
+.grid-line { stroke: var(--line-soft); stroke-width: 1; }
+.zero-line { stroke: var(--slate-dim); stroke-width: 1.5; }
+
+.tick,
+.row-label,
+.row-value,
+.row-note {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  fill: var(--slate);
+  font-variant-numeric: tabular-nums;
+}
+
+.row-label { fill: var(--ink-2); }
+.row-value { fill: var(--ink); }
+.row-note { font-family: var(--f-ui); fill: var(--slate-dim); font-style: italic; }
+
+.point { stroke: var(--surface); stroke-width: 1.5; }
+.point.pos { fill: var(--act); }
+.point.neg { fill: var(--omit); }
+.baseline-point { fill: var(--slate-dim); }
+
+.whisker { stroke-width: 2; }
+.cap { stroke-width: 2; }
+.whisker.pos, .cap.pos { stroke: var(--act); }
+.whisker.neg, .cap.neg { stroke: var(--omit); }
+
+.plot figcaption {
+  margin-top: 0.5rem;
+  font-family: var(--f-text);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--slate);
+  max-width: 68ch;
+}
+
+.levels {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--f-mono);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.levels th,
+.levels td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--line-soft);
+  text-align: left;
+}
+
+.levels thead th {
+  font-family: var(--f-ui);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--slate);
+  border-bottom-color: var(--line);
+}
+
+.levels .num { text-align: right; }
+.levels .ci { color: var(--slate); }
+.levels tbody th { font-weight: 400; color: var(--ink); }
+.levels tr.baseline { background: var(--surface-2); }
+
+.levels .tag {
+  margin-left: 0.5rem;
+  padding: 0.08rem 0.35rem;
+  font-family: var(--f-ui);
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--slate);
+  background: var(--dead-soft);
+  border-radius: 2px;
+}
+
+.of { color: var(--slate-dim); }
+
+.bars { list-style: none; margin: 0.9rem 0 0; padding: 0; display: grid; gap: 0.42rem; }
+
+.bars li {
+  display: grid;
+  grid-template-columns: minmax(8rem, 14rem) 1fr minmax(5.5rem, auto);
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bar-label { font-family: var(--f-mono); font-size: 0.78rem; color: var(--ink-2); }
+
+.bar-track {
+  height: 0.6rem;
+  background: var(--surface-2);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.bar-fill { display: block; height: 100%; background: var(--refusal); }
+
+.bar-value {
+  font-family: var(--f-mono);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--ink);
+}
+
+.empty { font-family: var(--f-text); color: var(--slate); }
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  justify-content: space-between;
+}
+
+.foot a { color: var(--accent); text-decoration: none; }
+.foot a:hover { text-decoration: underline; }
+
+@media (max-width: 640px) {
+  .bars li { grid-template-columns: 1fr; gap: 0.2rem; }
+  .bar-value { text-align: left; }
+  .levels { display: block; overflow-x: auto; }
+}

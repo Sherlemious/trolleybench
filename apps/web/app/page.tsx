@@ -62,9 +62,12 @@ export default async function Page() {
       <Workbench data={data} />
 
       <footer className="foot">
-        Your own answers are kept in this browser only. They are never sent anywhere and are not
-        collected as human baseline data &mdash; consented collection is a later phase with a proper
-        consent flow behind it.
+        <span>
+          Your own answers are kept in this browser only. They are never sent anywhere and are not
+          collected as human baseline data &mdash; consented collection is a later phase with a
+          proper consent flow behind it.
+        </span>
+        <a href="/results">results explorer &rarr;</a>
       </footer>
     </main>
   );

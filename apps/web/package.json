@@ -11,6 +11,8 @@
     "@trolleybench/spec": "workspace:*",
     "@trolleybench/engine": "workspace:*",
     "@trolleybench/scenarios": "workspace:*",
+    "@trolleybench/analysis": "workspace:*",
+    "@trolleybench/runner": "workspace:*",
     "@trolleybench/store": "workspace:*",
     "next": "^15.1.3",
     "react": "^19.0.0",
