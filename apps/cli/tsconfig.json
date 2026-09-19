@@ -28,6 +28,9 @@
     },
     {
       "path": "../../packages/store"
+    },
+    {
+      "path": "../../packages/analysis"
     }
   ]
 }

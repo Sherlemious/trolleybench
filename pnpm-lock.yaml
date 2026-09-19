@@ -51,6 +51,9 @@ importers:
       '@trolleybench/adapters':
         specifier: workspace:*
         version: link:../../packages/adapters
+      '@trolleybench/analysis':
+        specifier: workspace:*
+        version: link:../../packages/analysis
       '@trolleybench/engine':
         specifier: workspace:*
         version: link:../../packages/engine
@@ -122,6 +125,9 @@ importers:
       '@trolleybench/engine':
         specifier: workspace:*
         version: link:../engine
+      '@trolleybench/runner':
+        specifier: workspace:*
+        version: link:../runner
       '@trolleybench/scenarios':
         specifier: workspace:*
         version: link:../scenarios

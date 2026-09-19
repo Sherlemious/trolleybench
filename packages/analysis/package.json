@@ -2,14 +2,26 @@
   "name": "@trolleybench/analysis",
   "version": "0.1.0",
   "type": "module",
-  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
-  "scripts": { "build": "tsc -b" },
-  "dependencies": { "@trolleybench/spec": "workspace:*" },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@trolleybench/spec": "workspace:*"
+  },
   "devDependencies": {
     "@trolleybench/engine": "workspace:*",
-    "@trolleybench/scenarios": "workspace:*"
+    "@trolleybench/scenarios": "workspace:*",
+    "@trolleybench/runner": "workspace:*"
   }
 }

@@ -19,6 +19,7 @@
     "@trolleybench/adapters": "workspace:*",
     "@trolleybench/scoring": "workspace:*",
     "@trolleybench/runner": "workspace:*",
-    "@trolleybench/store": "workspace:*"
+    "@trolleybench/store": "workspace:*",
+    "@trolleybench/analysis": "workspace:*"
   }
 }

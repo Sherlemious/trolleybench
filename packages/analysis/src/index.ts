@@ -3,6 +3,7 @@ export * from "./bootstrap.js";
 export * from "./rates.js";
 export * from "./rng.js";
 export * from "./amce.js";
+export * from "./authoritative.js";
 export * from "./consistency.js";
 export * from "./multiple-comparisons.js";
 export * from "./refusal.js";
