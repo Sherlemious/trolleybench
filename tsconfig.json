@@ -20,6 +20,9 @@
       "path": "./packages/runner"
     },
     {
+      "path": "./packages/analysis"
+    },
+    {
       "path": "./packages/store"
     },
     {

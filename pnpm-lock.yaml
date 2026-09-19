@@ -113,6 +113,19 @@ importers:
         specifier: workspace:*
         version: link:../spec
 
+  packages/analysis:
+    dependencies:
+      '@trolleybench/spec':
+        specifier: workspace:*
+        version: link:../spec
+    devDependencies:
+      '@trolleybench/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@trolleybench/scenarios':
+        specifier: workspace:*
+        version: link:../scenarios
+
   packages/engine:
     dependencies:
       '@messageformat/core':
