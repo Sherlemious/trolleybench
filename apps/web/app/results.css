@@ -1,42 +1,9 @@
 /* Results explorer. Uses the workbench's tokens throughout - no new palette, because
    this is the same instrument seen from a different angle, not a different product. */
 
-.mast .sub {
-  font-family: var(--f-ui);
-  font-weight: 400;
-  font-size: 0.5em;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--slate);
-  vertical-align: 0.4em;
-}
-
 .notice.warn {
   border-left-color: var(--refusal);
   background: var(--refusal-soft);
-}
-
-.panel {
-  margin: 1.75rem 0;
-  padding: 1.25rem 1.35rem 1.4rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 3px;
-}
-
-.panel.alarm {
-  border-color: var(--act);
-  box-shadow: inset 3px 0 0 var(--act);
-}
-
-.panel > h2 {
-  margin: 0 0 0.9rem;
-  font-family: var(--f-ui);
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--slate);
 }
 
 .stat-row {
@@ -239,3 +206,295 @@
   .bar-value { text-align: left; }
   .levels { display: block; overflow-x: auto; }
 }
+
+/* ======================================================================
+   People and the model
+   Human results: hollow ink markers. Model: filled accent markers. Shape
+   and row label carry identity too, so colour is never the only channel.
+   ====================================================================== */
+.compare { display: flex; flex-direction: column; gap: 26px; }
+
+.cmp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 12.5px;
+  color: var(--slate);
+}
+.cmp-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.cmp-legend .mk { position: static; transform: none; }
+.cmp-legend .wk { display: inline-block; width: 22px; height: 2px; background: var(--slate-dim); border-radius: 1px; }
+
+.cmp-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.cmp-head h3 { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
+.cmp-cells { font-family: var(--f-mono); font-size: 11px; color: var(--slate-dim); }
+
+.cmp-rows { display: flex; flex-direction: column; }
+.cmp-row {
+  display: grid;
+  grid-template-columns: minmax(0, 240px) minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: 16px;
+  min-height: 40px;
+}
+.cmp-row + .cmp-row:not(.cmp-axis) { border-top: 1px solid var(--line-soft); }
+.cmp-label { display: flex; flex-direction: column; min-width: 0; padding-block: 5px; }
+.cmp-label .who { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+.cmp-label .who a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--line); }
+.cmp-label .who a:hover { border-bottom-color: var(--accent); color: var(--accent); }
+.cmp-label .sub { font-size: 11.5px; color: var(--slate); line-height: 1.35; }
+.cmp-row.model .who { color: var(--accent); font-family: var(--f-mono); font-size: 13px; }
+.cmp-value {
+  font-family: var(--f-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--ink-2);
+}
+.cmp-row.model .cmp-value { color: var(--accent); font-weight: 500; }
+
+.cmp-track {
+  position: relative;
+  height: 40px;
+  /* Recessive quarter gridlines, solid hairlines, drawn as the track background. */
+  background:
+    linear-gradient(var(--line-soft), var(--line-soft)) 0 0 / 1px 100% no-repeat,
+    linear-gradient(var(--line-soft), var(--line-soft)) 25% 0 / 1px 100% no-repeat,
+    linear-gradient(var(--line), var(--line)) 50% 0 / 1px 100% no-repeat,
+    linear-gradient(var(--line-soft), var(--line-soft)) 75% 0 / 1px 100% no-repeat,
+    linear-gradient(var(--line-soft), var(--line-soft)) 100% 0 / 1px 100% no-repeat;
+}
+.cmp-axis { min-height: 22px; }
+.cmp-axis .cmp-track { height: 22px; background: none; }
+.cmp-axis .tick {
+  position: absolute;
+  bottom: 2px;
+  transform: translateX(-50%);
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  color: var(--slate-dim);
+}
+.cmp-axis .tick:first-child { transform: none; }
+.cmp-axis .tick:last-child { transform: translateX(-100%); }
+
+.cmp .whisker {
+  position: absolute;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  background: var(--slate-dim);
+}
+.cmp-row.model .whisker { background: var(--accent); opacity: 0.55; height: 4px; margin-top: -2px; }
+
+.mk {
+  position: absolute;
+  top: 50%;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  outline: none;
+}
+.mk.human { background: var(--surface); border: 2px solid var(--ink-2); }
+.mk.model { background: var(--accent); box-shadow: 0 0 0 2px var(--surface); width: 14px; height: 14px; }
+.cmp-track .mk { cursor: default; }
+.cmp-track .mk:hover, .cmp-track .mk:focus-visible { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+
+/* Hover and focus tooltip, no script: every marker carries its full reading. */
+.cmp-track .mk[data-tip]:hover::after,
+.cmp-track .mk[data-tip]:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 280px;
+  padding: 8px 10px;
+  font-family: var(--f-ui);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--paper);
+  background: var(--ink);
+  border-radius: 4px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+  white-space: normal;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.cmp-finding {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  font-family: var(--f-text);
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border-radius: 3px;
+}
+.cmp-finding a { color: inherit; }
+.dir { display: block; margin-top: 6px; font-family: var(--f-ui); font-size: 13px; font-weight: 500; }
+.dir.agree { color: var(--accent); }
+.dir.differ { color: var(--act); }
+
+@media (max-width: 720px) {
+  .cmp-row {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    grid-template-areas: "label value" "track track";
+    gap: 0 10px;
+  }
+  .cmp-label { grid-area: label; }
+  .cmp-value { grid-area: value; }
+  .cmp-track { grid-area: track; height: 30px; }
+  .cmp-axis { grid-template-areas: "track track"; }
+  .cmp-axis .cmp-label, .cmp-axis .cmp-value { display: none; }
+}
+
+/* ======================================================================
+   Heat table: act rate by scenario x framework
+   One hue (act), light to dark, mixed into the surface. The number is
+   always printed; shading only helps the eye.
+   ====================================================================== */
+.heat-wrap { overflow-x: auto; }
+table.heat { width: 100%; border-collapse: separate; border-spacing: 2px; font-variant-numeric: tabular-nums; }
+table.heat th {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--slate);
+  text-align: center;
+  padding: 4px 8px 8px;
+  white-space: nowrap;
+}
+table.heat thead th:first-child, table.heat tbody th { text-align: left; }
+table.heat tbody th { padding: 6px 12px 6px 0; min-width: 190px; }
+table.heat tbody th .t { display: block; font-size: 13.5px; font-weight: 500; color: var(--ink); }
+table.heat tbody th code { font-family: var(--f-mono); font-size: 10.5px; color: var(--slate-dim); }
+table.heat td {
+  --v: 0;
+  min-width: 96px;
+  padding: 9px 10px;
+  text-align: center;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--act) calc(var(--v) * 88%), var(--surface-2));
+  color: var(--ink);
+}
+table.heat td.dark { color: var(--on-act); }
+table.heat td .v { display: block; font-family: var(--f-mono); font-size: 15px; font-weight: 500; }
+table.heat td .n { display: block; font-size: 10.5px; opacity: 0.75; }
+table.heat td.na {
+  background: repeating-linear-gradient(135deg, var(--surface-2) 0 6px, var(--dead-soft) 6px 12px);
+  color: var(--slate);
+}
+.heat-scale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: var(--slate);
+}
+.heat-scale .ramp {
+  width: 120px;
+  height: 8px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--surface-2), var(--act));
+}
+.heat-scale .sep { color: var(--slate-dim); }
+
+/* ======================================================================
+   Option-order flip meter, on a 0-50% scale because 50% is a coin.
+   ====================================================================== */
+.flip { max-width: 640px; padding-top: 26px; }
+.flip-track { position: relative; display: flex; height: 10px; border-radius: 5px; overflow: visible; }
+.flip-zone { height: 100%; }
+.flip-zone.ok { background: color-mix(in oklab, var(--accent) 35%, var(--surface-2)); border-radius: 5px 0 0 5px; }
+.flip-zone.warn { background: color-mix(in oklab, var(--refusal) 30%, var(--surface-2)); }
+.flip-zone.bad { background: color-mix(in oklab, var(--act) 45%, var(--surface-2)); border-radius: 0 5px 5px 0; }
+.flip-mark {
+  position: absolute;
+  top: -5px;
+  width: 4px;
+  height: 20px;
+  margin-left: -2px;
+  background: var(--ink);
+  border-radius: 2px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.flip-mark span {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--f-mono);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.flip-scale { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11.5px; color: var(--slate); }
+
+/* The forest plot draws at its natural size and only ever shrinks. */
+.plot svg { width: auto; max-width: 100%; }
+
+.bar-label { font-family: var(--f-ui); font-size: 13px; }
+
+/* ======================================================================
+   Sources
+   ====================================================================== */
+.src-groups { display: flex; flex-direction: column; gap: 28px; }
+.src-group h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.src-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.src { display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 18px; }
+.src-num { display: flex; flex-direction: column; gap: 2px; }
+.src-num .big { font-size: 28px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.src-num .big.small { font-size: 18px; color: var(--slate); }
+.src-num .ci { font-family: var(--f-mono); font-size: 11.5px; color: var(--slate); }
+.src-num .measure { font-size: 11.5px; color: var(--slate-dim); line-height: 1.35; }
+.src-body p { margin: 0; }
+.src-cite { font-size: 14px; font-weight: 500; }
+.src-cite a, .bib a { color: var(--accent); text-decoration: none; }
+.src-cite a:hover, .bib a:hover { text-decoration: underline; }
+.src-cite .via { font-weight: 400; color: var(--slate); font-size: 13px; }
+.src-body .src-meta { font-size: 12.5px; color: var(--slate); margin-top: 2px; }
+.src-body .src-finding { font-family: var(--f-text); font-size: 14.5px; margin-top: 8px; color: var(--ink-2); }
+.src blockquote {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  font-family: var(--f-text);
+  font-size: 14.5px;
+  line-height: 1.55;
+  font-style: italic;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border-left: 3px solid var(--line);
+  border-radius: 0 3px 3px 0;
+}
+.src-body .src-note { font-size: 12.5px; color: var(--slate); margin-top: 8px; line-height: 1.5; }
+@media (max-width: 620px) { .src { grid-template-columns: minmax(0, 1fr); gap: 6px; } }
+
+.bib { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 12px; }
+.bib li { font-family: var(--f-text); font-size: 14.5px; line-height: 1.5; color: var(--ink-2); }
+.bib li p { margin: 0; }
+.bib li .bib-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 3px; font-family: var(--f-ui); }
+.bib-meta code { font-family: var(--f-mono); font-size: 11.5px; color: var(--slate-dim); }
+.badge.checked { background: var(--accent-soft); color: var(--accent); }
+.badge.checked a { color: inherit; }
+.badge.ok { background: var(--accent); color: var(--surface); }
+.dir-n { font-weight: 400; color: var(--slate); }

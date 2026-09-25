@@ -9,6 +9,8 @@ import {
   type LoadedPack,
 } from "@trolleybench/scenarios";
 import { readResults } from "@trolleybench/runner";
+import { listRuns } from "./analysis";
+import { loadSources, type UiBaseline, type UiReference } from "./sources";
 
 /**
  * The repo root, relative to this app. Scenario content is read straight from
@@ -67,10 +69,14 @@ export interface WorkbenchData {
     orders: OptionOrder[];
     validationErrors: number;
     resultsRunId: string | null;
+    /** The subject whose recorded answers the workbench replays. */
+    subject: { id: string; label: string; isStub: boolean } | null;
   };
   templates: UiTemplate[];
   instances: UiInstance[];
   results: UiResult[];
+  baselines: UiBaseline[];
+  references: Record<string, UiReference>;
 }
 
 export async function loadWorkbenchData(): Promise<WorkbenchData> {
@@ -89,13 +95,14 @@ export async function loadWorkbenchData(): Promise<WorkbenchData> {
     0,
   );
 
-  // Committed sample first: `runs/` is gitignored local output, so a fresh clone or a
-  // Vercel build has nothing there. Local runs override it when present.
-  const local = await readResults(resolve(ROOT, "runs", "final.jsonl")).catch(() => ({ rows: [] }));
-  const sample = local.rows.length
-    ? local
-    : await readResults(resolve(ROOT, "content", "samples", "echo-demo.jsonl")).catch(() => ({ rows: [] }));
-  const { rows } = sample;
+  // The first committed run, real models before the echo stub. Committed samples
+  // rather than `runs/`, which is gitignored: what a deployed page replays is exactly
+  // what a fresh clone reproduces.
+  const subject = (await listRuns())[0] ?? null;
+  const { rows } = subject
+    ? await readResults(resolve(ROOT, "content", "samples", `${subject.id}.jsonl`)).catch(() => ({ rows: [] }))
+    : { rows: [] };
+  const sources = await loadSources();
 
   const grid: VariationGrid = suite.variations;
 
@@ -108,6 +115,7 @@ export async function loadWorkbenchData(): Promise<WorkbenchData> {
       orders: grid.option_order,
       validationErrors,
       resultsRunId: rows[0]?.run_id ?? null,
+      subject: subject ? { id: subject.id, label: subject.label, isStub: subject.isStub } : null,
     },
     templates: packs.flatMap((p) =>
       p.pack.templates.map((t) => ({
@@ -149,5 +157,7 @@ export async function loadWorkbenchData(): Promise<WorkbenchData> {
       system_prompt: i.system_prompt ?? null,
     })),
     results: rows.map((r) => ({ h: r.instance_hash, o: r.outcome, c: r.chosen_option_id ?? null })),
+    baselines: sources.baselines,
+    references: sources.byKey,
   };
 }

@@ -28,6 +28,7 @@ button { font-family: inherit; }
     --refusal-soft: #eee9d4;
     --dead: #9aa4ac;
     --dead-soft: #e8ebed;
+    --on-act: #10161c; /* ink: measured higher contrast than white at every heat level */
 
     --f-ui: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --f-text: "Spectral", Georgia, "Times New Roman", serif;
@@ -57,6 +58,7 @@ button { font-family: inherit; }
       --refusal-soft: #2d2814;
       --dead: #5e6a73;
       --dead-soft: #1a232a;
+      --on-act: #10161c;
     }
   }
 
@@ -80,6 +82,7 @@ button { font-family: inherit; }
     --refusal-soft: #2d2814;
     --dead: #5e6a73;
     --dead-soft: #1a232a;
+    --on-act: #10161c;
   }
 
   body {

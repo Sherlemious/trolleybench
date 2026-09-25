@@ -1,4 +1,5 @@
 import { loadWorkbenchData } from "../lib/load";
+import SiteNav from "./SiteNav";
 import Workbench from "./Workbench";
 
 /**
@@ -11,17 +12,20 @@ export const dynamic = "force-static";
 
 export default async function Page() {
   const data = await loadWorkbenchData();
+  const subject = data.meta.subject && !data.meta.subject.isStub ? data.meta.subject.label : null;
 
   return (
     <main className="wrap">
-      <header className="mast">
+      <SiteNav current="workbench" />
+
+      <header className="page-head">
         <div>
-          <h1 className="wordmark">
-            trolley<b>bench</b>
-          </h1>
-          <p className="tagline">
-            A scenario is an experiment design, not a fixed string. Change a factor and watch the
-            stimulus &mdash; and its content hash &mdash; recompute.
+          <p className="eyebrow">Scenario workbench</p>
+          <h1>A dilemma is an experiment design</h1>
+          <p className="lede">
+            Every scenario here is a template with factors, not a fixed string. Change a factor, a
+            framework or the option order and watch the stimulus &mdash; and its content hash &mdash;
+            recompute. Answer it yourself, then see how people and {subject ?? "the model"} did.
           </p>
         </div>
         <dl className="ident">
@@ -37,7 +41,7 @@ export default async function Page() {
           </div>
           <div>
             <dt>suite digest</dt>
-            <dd>{data.meta.suite.digest.slice(0, 19)}&hellip;</dd>
+            <dd title={data.meta.suite.digest}>{data.meta.suite.digest.slice(0, 19)}&hellip;</dd>
           </div>
           <div>
             <dt>pack</dt>
@@ -49,16 +53,6 @@ export default async function Page() {
         </dl>
       </header>
 
-      <p className="notice">
-        <strong>Live content, echo subject.</strong>
-        <span>
-          Every scenario, hash and design matrix below is read from <code>content/</code> at build
-          time. The response rates in &ldquo;Outcomes&rdquo; come from the built-in{" "}
-          <code>echo</code> test double &mdash; a deterministic stub, <em>not</em> a language model.
-          They show the shape of the analysis and mean nothing about any model.
-        </span>
-      </p>
-
       <Workbench data={data} />
 
       <footer className="foot">
@@ -67,7 +61,7 @@ export default async function Page() {
           collected as human baseline data &mdash; consented collection is a later phase with a
           proper consent flow behind it.
         </span>
-        <a href="/results">results explorer &rarr;</a>
+        <a href="/results">full results &rarr;</a>
       </footer>
     </main>
   );

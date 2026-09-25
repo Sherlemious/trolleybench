@@ -116,7 +116,7 @@ function Plot({ amce, clusters }: { amce: UiAmce; clusters: number }) {
     <figure className="plot">
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        width="100%"
+        width={width}
         height={height}
         role="img"
         aria-label={`Forest plot of effects on ${amce.label} against baseline ${amce.baseline}`}
