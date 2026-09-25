@@ -9,6 +9,7 @@ export const ProviderKind = z.enum([
   "openai_compatible", // ollama, vLLM, LM Studio, llama.cpp, Together, Groq, OpenRouter...
   "mcp_subject",       // Subject Provider Protocol - we are the MCP client
   "echo",              // deterministic test double
+  "hosted",            // ran on the caller's side; a hosted run only recorded its answers
 ]);
 
 export const SubjectSpec = z.object({

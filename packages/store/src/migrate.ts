@@ -86,6 +86,16 @@ create index if not exists results_run_idx on results (run_id);
 create index if not exists results_instance_idx on results (instance_hash);
 create index if not exists results_mode_idx on results (elicitation_mode, run_id, subject_id);
 create index if not exists results_cell_idx on results (run_id, instance_hash, subject_id, repetition);
+
+-- Hosted runs: started over the HTTP API, the MCP endpoint or the browser, and answered
+-- one item at a time. Added with ALTER ... IF NOT EXISTS so an existing database
+-- upgrades in place and a CLI-only database is unaffected.
+alter table runs add column if not exists origin text not null default 'cli';
+alter table runs add column if not exists self_reported boolean not null default false;
+alter table runs add column if not exists token_hash text;
+alter table runs add column if not exists client_hash text;
+alter table runs add column if not exists item_order jsonb;
+create index if not exists runs_client_idx on runs (client_hash, started_at);
 `;
 
 export interface MigrateReport {

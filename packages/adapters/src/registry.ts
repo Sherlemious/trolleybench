@@ -60,6 +60,12 @@ export function createSubject(spec: SubjectSpec, options: CreateOptions = {}): S
           `Until then, expose your model over an OpenAI-compatible endpoint and use --base-url.`,
       );
 
+    case "hosted":
+      throw new ConfigError(
+        `subject '${spec.id}': a hosted subject answered over the web API or MCP and has no ` +
+          `local adapter. Run the model directly with --provider, or start a hosted run on the site.`,
+      );
+
     default: {
       const exhaustive: never = spec.provider;
       throw new ConfigError(`unknown provider: ${String(exhaustive)}`);

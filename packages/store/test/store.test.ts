@@ -9,6 +9,7 @@ import type { Db } from "../src/client.js";
 import { migrate } from "../src/migrate.js";
 import { ingestRun, resultId } from "../src/ingest.js";
 import { listRuns, modesPresent, outcomeBreakdown, ratesBy } from "../src/query.js";
+import { listStoredRuns, loadStoredRun } from "../src/read.js";
 import * as schema from "../src/schema.js";
 
 /**
@@ -320,3 +321,55 @@ describe("grouped rates", () => {
     ).rejects.toThrow(/not a groupable design field/);
   });
 });
+
+describe("reading a run back out", () => {
+  it("round-trips rows and instances into the shapes the analysis consumes", async () => {
+    // Every attempt comes back, the superseded one included: newest-wins is the analysis
+    // layer's rule, and applying it in two places would be two chances to disagree.
+    const rows = [
+      row({ outcome: "error", timestamp: "2026-01-01T00:00:00.000Z" }),
+      row({ outcome: "act", timestamp: "2026-01-01T00:05:00.000Z" }),
+      row({ instance_hash: instance(2).hash, outcome: "refusal", chosen_option_id: undefined }),
+    ];
+    await ingestRun(db, { jsonlPath: await writeRun(rows), instances: [instance(1), instance(2)] });
+
+    const loaded = await loadStoredRun(db, "r1");
+    expect(loaded).not.toBeNull();
+    expect(loaded!.rows).toHaveLength(3);
+    const byTime = [...loaded!.rows].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    expect(byTime.map((r) => r.outcome).sort()).toEqual(["act", "error", "refusal"]);
+    expect(loaded!.rows.find((r) => r.outcome === "act")!.timestamp).toBe("2026-01-01T00:05:00.000Z");
+
+    const i1 = loaded!.instances.find((i) => i.hash === instance(1).hash)!;
+    expect(i1.template_id).toBe("foot.bystander_switch");
+    expect(i1.factors).toEqual({ ratio: "r1v5" });
+    expect(i1.variation.moral_framework).toBe("none");
+    expect(i1.options.map((o) => o.polarity)).toEqual(["act", "omit"]);
+    expect(loaded!.spec.elicitation_mode).toBe("prompt");
+  });
+
+  it("counts each run's own rows, not the whole table", async () => {
+    // With one run in the database "this run's rows" and "all rows" are the same
+    // number, which is how a subquery counting the whole table passed its first test.
+    await ingestRun(db, { jsonlPath: await writeRun([row({ run_id: "small" })], { runId: "small" }), instances: [instance(1)] });
+    await ingestRun(db, {
+      jsonlPath: await writeRun(
+        [row({ run_id: "big" }), row({ run_id: "big", instance_hash: instance(2).hash }), row({ run_id: "big", instance_hash: instance(3).hash })],
+        { runId: "big" },
+      ),
+      instances: [instance(1), instance(2), instance(3)],
+    });
+    const byId = Object.fromEntries((await listStoredRuns(db)).map((r) => [r.runId, r.rows]));
+    expect(byId).toEqual({ small: 1, big: 3 });
+  });
+
+  it("lists runs with their subjects, and returns null for an unknown run", async () => {
+    await ingestRun(db, { jsonlPath: await writeRun([row()]), instances: [instance(1)] });
+    const listed = await listStoredRuns(db);
+    expect(listed).toHaveLength(1);
+    expect(listed[0]!.subjects[0]!.provider).toBe("echo");
+    expect(listed[0]!.rows).toBe(1);
+    expect(await loadStoredRun(db, "nope")).toBeNull();
+  });
+});
+

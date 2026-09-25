@@ -29,6 +29,9 @@
       "path": "./packages/inspect-export"
     },
     {
+      "path": "./packages/session"
+    },
+    {
       "path": "./apps/cli"
     }
   ]

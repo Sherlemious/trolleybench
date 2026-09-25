@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .next/
+.next-build/
 next-env.d.ts
 *.tsbuildinfo
 .DS_Store

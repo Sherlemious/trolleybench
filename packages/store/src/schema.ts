@@ -1,4 +1,5 @@
 import {
+  boolean,
   doublePrecision,
   index,
   integer,
@@ -35,6 +36,20 @@ export const runs = pgTable("runs", {
   spec: jsonb("spec").notNull(),
   sourceFile: text("source_file"),
   importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+
+  /** Where the run came from: `cli` (imported JSONL), or a hosted `api`, `mcp` or `browser` run. */
+  origin: text("origin").notNull().default("cli"),
+  /**
+   * True when the model's identity is only the caller's say-so - every hosted run, since
+   * the server never talks to the model itself. Surfaces label these runs as such.
+   */
+  selfReported: boolean("self_reported").notNull().default(false),
+  /** sha256 of the run's bearer token. The token itself is never stored. */
+  tokenHash: text("token_hash"),
+  /** Salted hash of the caller's address, for rate limiting only. */
+  clientHash: text("client_hash"),
+  /** Instance hashes in the order a hosted run presents them. */
+  itemOrder: jsonb("item_order"),
 });
 
 export const runSubjects = pgTable(
