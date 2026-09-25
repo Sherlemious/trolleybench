@@ -17,11 +17,13 @@
     "dev": "pnpm --filter @trolleybench/web dev",
     "build:web": "pnpm --filter @trolleybench/web build",
     "verify:suites": "node apps/cli/dist/index.js verify content/suites/canon-v0.yaml",
-    "verify:crlf": "node scripts/to-crlf.mjs content && node apps/cli/dist/index.js verify content/suites/canon-v0.yaml && git checkout -- content"
+    "verify:crlf": "node scripts/to-crlf.mjs content && node apps/cli/dist/index.js verify content/suites/canon-v0.yaml && git checkout -- content",
+    "verify:inspect": "node apps/cli/dist/index.js export --inspect --suite content/suites/canon-v0.yaml --out exports/canon-v0 && python -m pytest exports/canon-v0/test_conformance.py -q"
   },
   "devDependencies": {
     "@trolleybench/adapters": "workspace:*",
     "@trolleybench/engine": "workspace:*",
+    "@trolleybench/inspect-export": "workspace:*",
     "@trolleybench/runner": "workspace:*",
     "@trolleybench/scenarios": "workspace:*",
     "@trolleybench/scoring": "workspace:*",

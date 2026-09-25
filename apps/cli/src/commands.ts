@@ -7,8 +7,11 @@ import {
   VariationGrid,
   type MoralFramework,
   type ProviderKind,
+  type ScenarioInstance,
   type SubjectSpec,
+  type SuiteDef,
 } from "@trolleybench/spec";
+import { exportInspect } from "@trolleybench/inspect-export";
 import { designSize } from "@trolleybench/engine";
 import {
   expandInstances,
@@ -77,18 +80,51 @@ export async function cmdValidate(args: ParsedArgs): Promise<number> {
   return errors > 0 ? 1 : 0;
 }
 
+interface ResolvedDesign {
+  /** Present only when --suite was given. */
+  suite: SuiteDef | undefined;
+  grid: VariationGrid;
+  selection: { packs: string[]; templates: string[]; tags: string[]; max_instances?: number };
+  instances: ScenarioInstance[];
+}
+
+/**
+ * Resolve --suite (or the ad-hoc design flags) into the instances to act on.
+ *
+ * Every command that sizes, runs or exports a design MUST come through here. When this
+ * logic was inlined per command they drifted: `run` read the suite's grid while
+ * `expand` silently dropped --suite and sized the CLI default, so canon.v0 reported 36
+ * instances against a lock of 144. One resolver means a command cannot disagree with
+ * its siblings about what the design is.
+ *
+ * A suite wins over the design flags, because a suite IS the design.
+ */
+async function resolveDesign(args: ParsedArgs, packs: readonly LoadedPack[]): Promise<ResolvedDesign> {
+  const suitePath = str(args, "suite");
+  const suite = suitePath ? await loadSuiteFile(resolve(process.cwd(), suitePath)) : undefined;
+
+  const grid = suite ? suite.variations : gridFrom(args);
+  const selection = suite
+    ? { packs: suite.packs, templates: suite.templates, tags: suite.tags }
+    : {
+        packs: list(args, "pack") ?? [],
+        templates: list(args, "template") ?? [],
+        tags: list(args, "tag") ?? [],
+        ...(args.flags.has("limit") ? { max_instances: num(args, "limit", 0) } : {}),
+      };
+
+  const instances = suite
+    ? expandSuite(packs, suite)
+    : expandInstances(packs, grid, { ...selection, seed: num(args, "seed", 0) });
+
+  return { suite, grid, selection, instances };
+}
+
 export async function cmdExpand(args: ParsedArgs): Promise<number> {
   const packs = await packsFrom(args);
-  const grid = gridFrom(args);
-  const filter = {
-    packs: list(args, "pack"),
-    templates: list(args, "template"),
-    tags: list(args, "tag"),
-    max_instances: args.flags.has("limit") ? num(args, "limit", 0) : undefined,
-    seed: num(args, "seed", 0),
-  };
-
-  const instances = expandInstances(packs, grid, filter);
+  // `expand` answers "how big is this design before I spend anything running it", so
+  // its answer has to be the design `run` would execute. Shared resolver, one answer.
+  const { grid, instances } = await resolveDesign(args, packs);
   const templates = packs.flatMap((p) => p.pack.templates);
   console.log(`full design:   ${designSize(templates, grid)} instance(s)`);
   console.log(`after filters: ${instances.length} instance(s)`);
@@ -215,8 +251,6 @@ export async function cmdRun(args: ParsedArgs): Promise<number> {
     }
   }
 
-  const suitePath = str(args, "suite");
-
   // THE MANIFEST MUST DESCRIBE THE RUN THAT HAPPENED.
   //
   // A suite carries its own variation grid and its own pack/template selection, and
@@ -227,23 +261,7 @@ export async function cmdRun(args: ParsedArgs): Promise<number> {
   // produced correct results; it just became impossible to say what they were of.
   //
   // So the spec below records the EFFECTIVE selection, whichever path produced it.
-  const suite = suitePath
-    ? await loadSuiteFile(resolve(process.cwd(), suitePath))
-    : undefined;
-
-  const grid = suite ? suite.variations : gridFrom(args);
-  const selection = suite
-    ? { packs: suite.packs, templates: suite.templates, tags: suite.tags }
-    : {
-        packs: list(args, "pack") ?? [],
-        templates: list(args, "template") ?? [],
-        tags: list(args, "tag") ?? [],
-        ...(args.flags.has("limit") ? { max_instances: num(args, "limit", 0) } : {}),
-      };
-
-  const instances = suite
-    ? expandSuite(packs, suite)
-    : expandInstances(packs, grid, { ...selection, seed: num(args, "seed", 0) });
+  const { suite, grid, selection, instances } = await resolveDesign(args, packs);
 
   if (instances.length === 0) {
     console.error("no instances selected - check --pack / --template / --tag");
@@ -385,6 +403,60 @@ export async function cmdRun(args: ParsedArgs): Promise<number> {
 }
 
 // ---------------------------------------------------------------------------
+
+/**
+ * Compile a design into a runnable Inspect AI task.
+ *
+ * The bridge to the Python eval ecosystem: the emitted task sends the same prompt the
+ * TypeScript runner sends, so results from the two paths are comparable rather than
+ * merely similar.
+ */
+export async function cmdExport(args: ParsedArgs): Promise<number> {
+  if (!bool(args, "inspect")) {
+    throw new UsageError(
+      "usage: trolley export --inspect [--suite <suite.yaml>] [--out <dir>]\n" +
+        "  --inspect is the only export target so far.",
+    );
+  }
+
+  const packs = await packsFrom(args);
+  // An export is something other people will run, so a pack that does not validate
+  // must not become an artefact - the same bar `run` holds.
+  for (const loaded of packs) {
+    const diagnostics = validatePack(loaded.pack);
+    if (hasErrors(diagnostics)) {
+      console.error(`pack '${loaded.pack.id}' has validation errors; refusing to export.\n`);
+      console.error(formatDiagnostics(diagnostics.filter((d) => d.level === "error")));
+      return 1;
+    }
+  }
+
+  const { suite, grid, selection, instances } = await resolveDesign(args, packs);
+  if (instances.length === 0) {
+    console.error("no instances selected - check --suite / --pack / --template / --tag");
+    return 1;
+  }
+
+  const outDir = resolve(process.cwd(), str(args, "out") ?? "exports/inspect");
+  const result = await exportInspect({
+    instances,
+    outDir,
+    suite: suite ? { id: suite.id, version: suite.version } : undefined,
+    selection,
+    variations: grid,
+    toolVersion: TOOL_VERSION,
+  });
+
+  console.log(`exported ${result.sampleCount} sample(s) to ${result.outDir}`);
+  for (const file of result.files) console.log(`  ${file}`);
+  console.log(`\n${result.conformanceCount} conformance case(s) pin the emitted scorer to this one.`);
+  console.log(`\nNext:`);
+  console.log(`  cd ${str(args, "out") ?? "exports/inspect"}`);
+  console.log(`  pip install inspect_ai pytest`);
+  console.log(`  pytest test_conformance.py`);
+  console.log(`  inspect eval trolleybench_task.py --model mockllm/model`);
+  return 0;
+}
 
 export async function cmdFreeze(args: ParsedArgs): Promise<number> {
   const suitePath = args.positionals[0] ?? str(args, "suite");

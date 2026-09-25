@@ -20,6 +20,7 @@
     "@trolleybench/scoring": "workspace:*",
     "@trolleybench/runner": "workspace:*",
     "@trolleybench/store": "workspace:*",
-    "@trolleybench/analysis": "workspace:*"
+    "@trolleybench/analysis": "workspace:*",
+    "@trolleybench/inspect-export": "workspace:*"
   }
 }

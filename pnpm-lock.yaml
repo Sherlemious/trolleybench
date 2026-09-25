@@ -21,6 +21,9 @@ importers:
       '@trolleybench/engine':
         specifier: workspace:*
         version: link:packages/engine
+      '@trolleybench/inspect-export':
+        specifier: workspace:*
+        version: link:packages/inspect-export
       '@trolleybench/runner':
         specifier: workspace:*
         version: link:packages/runner
@@ -57,6 +60,9 @@ importers:
       '@trolleybench/engine':
         specifier: workspace:*
         version: link:../../packages/engine
+      '@trolleybench/inspect-export':
+        specifier: workspace:*
+        version: link:../../packages/inspect-export
       '@trolleybench/runner':
         specifier: workspace:*
         version: link:../../packages/runner
@@ -146,6 +152,21 @@ importers:
       '@messageformat/parser':
         specifier: ^5.1.1
         version: 5.1.1
+      '@trolleybench/spec':
+        specifier: workspace:*
+        version: link:../spec
+
+  packages/inspect-export:
+    dependencies:
+      '@trolleybench/runner':
+        specifier: workspace:*
+        version: link:../runner
+      '@trolleybench/scenarios':
+        specifier: workspace:*
+        version: link:../scenarios
+      '@trolleybench/scoring':
+        specifier: workspace:*
+        version: link:../scoring
       '@trolleybench/spec':
         specifier: workspace:*
         version: link:../spec
