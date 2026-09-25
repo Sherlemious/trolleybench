@@ -235,3 +235,76 @@
 
 /* Space between stacked factors in the rail. */
 .rail .field > div + div { margin-top: 14px; }
+
+/* ---- workbench: rail headings are h2 now; keep their small-caps look ----- */
+.field > h2 {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--slate-dim);
+  margin: 0 0 9px;
+  font-weight: 600;
+}
+/* Links inside hints are marked by more than colour. */
+.panel-head .hint a { text-decoration: underline; text-underline-offset: 2px; }
+.bar-none { font-size: 12.5px; color: var(--slate); font-style: italic; }
+
+/* ---- workbench on phones: dilemma first ------------------------------------ */
+.variant-toggle { display: none; }
+.variant-controls { display: flex; flex-direction: column; gap: 22px; }
+@media (max-width: 900px) {
+  .page-head .ident { display: none; }
+  .bench { gap: 14px; margin-top: 8px; }
+  .rail { gap: 10px; }
+
+  /* Scenario picker: one swipeable row of chips. */
+  .tpl-list {
+    flex-direction: row;
+    gap: 8px;
+    overflow-x: auto;
+    background: none;
+    border: 0;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tpl-list::-webkit-scrollbar { display: none; }
+  .tpl {
+    flex: none;
+    width: auto;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-left-width: 1px;
+    border-radius: 999px;
+  }
+  .tpl[aria-pressed="true"] { border-color: var(--accent); }
+  .tpl .t-meta { display: none; }
+  .tpl .t-title { font-size: 13.5px; white-space: nowrap; }
+
+  /* Variant controls: a summary line that opens the full set. */
+  .variant-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 14px;
+    font: inherit;
+    text-align: left;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .vt-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--slate-dim); }
+  .vt-summary { flex: 1; min-width: 0; font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vt-action { font-size: 13px; font-weight: 600; color: var(--accent); }
+  .variant-controls { display: none; flex-direction: column; gap: 18px; padding: 4px 2px 8px; }
+  .variant-controls.open { display: flex; }
+
+  /* Comfortable tap targets. */
+  .seg button { min-height: 40px; padding: 8px 12px; }
+  .replay button, .model-play { min-height: 40px; }
+  .opt { min-height: 52px; }
+}

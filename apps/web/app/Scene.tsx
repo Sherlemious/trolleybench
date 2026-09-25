@@ -15,6 +15,8 @@ import type { SceneSpec } from "../lib/scene";
 export interface SceneRun {
   polarity: "act" | "omit";
   by: "you" | "subject";
+  /** Who the subject is, e.g. "llama3.2:3b". The figure names them rather than guessing. */
+  label?: string;
   key: number;
 }
 
@@ -950,7 +952,7 @@ function Defs() {
 }
 
 function statusText(spec: SceneSpec, run: SceneRun | null, phase: ScenePhase): { text: string; tone: string } {
-  const who = run?.by === "subject" ? "the echo subject" : "you";
+  const who = run?.by === "subject" ? (run.label ?? "the model") : "you";
   const k = spec.kind;
   if (!run) {
     if (phase === "enter") return { text: k === "transplant" ? "morning rounds" : "brakes have failed · trolley approaching", tone: "wait" };

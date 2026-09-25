@@ -12,7 +12,7 @@ button { font-family: inherit; }
     --ink: #10161c;
     --ink-2: #2b3742;
     --slate: #5a6672;
-    --slate-dim: #8794a0;
+    --slate-dim: #5f6b77; /* 4.5:1 or better on every light surface */
     --paper: #f4f6f7;
     --surface: #ffffff;
     --surface-2: #eceff1;
@@ -47,7 +47,7 @@ button { font-family: inherit; }
       --ink: #eef2f4;
       --ink-2: #c3ced6;
       --slate: #97a4ae;
-      --slate-dim: #6d7a85;
+      --slate-dim: #8593a0; /* 4.5:1 or better on every dark surface */
       --paper: #0d1217;
       --surface: #141c23;
       --surface-2: #1c262e;
@@ -75,7 +75,7 @@ button { font-family: inherit; }
     --ink: #eef2f4;
     --ink-2: #c3ced6;
     --slate: #97a4ae;
-    --slate-dim: #6d7a85;
+    --slate-dim: #8593a0; /* 4.5:1 or better on every dark surface */
     --paper: #0d1217;
     --surface: #141c23;
     --surface-2: #1c262e;

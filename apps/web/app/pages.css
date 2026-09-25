@@ -334,3 +334,24 @@ a.primary:active, button.primary:active, a.ghost:active, button.ghost:active { t
 .barrow .name a { color: var(--mc, var(--ink-2)); text-decoration: none; }
 .barrow .name a:hover { text-decoration: underline; }
 .headline p.eyebrow { font-family: var(--f-mono); font-size: 11.5px; color: var(--accent); letter-spacing: 0.06em; }
+
+/* Model identity: TEXT stays in text colours (series colours fail contrast as text);
+   a filled dot in the model's slot colour carries identity beside the name. */
+.model-play, .cmp-row.model .who, .cmp-row.model .cmp-value, .model-link,
+.reveal-bars .mono, .chip, .barrow .name a { color: var(--ink) !important; }
+.model-play:not(.off)::before, .reveal-bars .model .mono::before, .chip::before, .barrow .name.s1 a::before,
+.barrow .name.s2 a::before, .barrow .name.s3 a::before, .barrow .name.s4 a::before, .cmp-row.model .who::before {
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--mc, var(--accent));
+  vertical-align: 0;
+}
+.model-play.off { color: var(--slate) !important; }
+.hashbar dd.live { color: var(--ink-2); }
+
+/* Badge text mixed toward ink: darker on light, lighter on dark, >= 4.5:1 either way. */
+.badge { color: color-mix(in oklab, var(--refusal) 55%, var(--ink)); }
