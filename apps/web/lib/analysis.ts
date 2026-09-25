@@ -11,11 +11,11 @@ import {
   type AmceResult,
   type RateSummary,
 } from "@trolleybench/analysis";
-import { findRun, listRuns, loadRun, packsOnce, type RunInfo, type RunSource } from "./runs";
+import { findRun, listEntries, listRuns, loadRun, packsOnce, type RunInfo, type RunSource } from "./runs";
 import { loadSources, type UiBaseline } from "./sources";
 
 export type { RunInfo } from "./runs";
-export { listRuns } from "./runs";
+export { listEntries, listRuns } from "./runs";
 
 /** Axes worth offering. Each names its own reference level. */
 export const AXES = [
@@ -84,7 +84,10 @@ export interface RunSummary {
 export interface ResultsData {
   available: boolean;
   run: RunInfo | null;
+  /** Model entries, for the switcher. */
   runs: RunInfo[];
+  /** The individual sessions behind the entry on screen (just itself for a single run). */
+  sessions: RunInfo[];
   mode: string;
   overall: RateSummary | null;
   clusters: number;
@@ -223,9 +226,11 @@ async function comparisonsFor(prepared: Prepared[]): Promise<Comparison[]> {
  * `trolley analyze` makes, so a number here and a number in a terminal cannot diverge.
  */
 export async function loadResultsData(idOrStem?: string): Promise<ResultsData> {
-  const runs = await listRuns();
-  const info = await findRun(idOrStem ?? runs.find((r) => !r.isStub)?.id);
-  const empty = emptyData(runs);
+  const runs = await listEntries();
+  const info = await findRun(idOrStem);
+  const allSessions = await listRuns();
+  const sessions = info ? allSessions.filter((r) => info.sessionIds.includes(r.id)) : [];
+  const empty = { ...emptyData(runs), sessions };
   if (!info) return empty;
   const p = await prepare(info.id);
   if (!p) return { ...empty, run: info };
@@ -260,6 +265,7 @@ export async function loadResultsData(idOrStem?: string): Promise<ResultsData> {
     available: true,
     run: info,
     runs,
+    sessions,
     mode: info.mode,
     overall: refusals.overall,
     clusters: new Set(scopedRows(p).map((r) => r.subject_id)).size,
@@ -289,8 +295,9 @@ export async function loadResultsData(idOrStem?: string): Promise<ResultsData> {
  * Stubs and unfinished hosted runs are listed, never plotted.
  */
 export async function loadOverview(): Promise<OverviewData> {
-  const runs = await listRuns();
-  const finished = runs.filter((r) => !r.isStub && r.complete);
+  const runs = await listEntries();
+  const sessions = await listRuns();
+  const finished = runs.filter((r) => !r.isStub);
 
   const groups: ModeGroup[] = [];
   for (const mode of ["prompt", "mcp_tool"] as const) {
@@ -317,7 +324,7 @@ export async function loadOverview(): Promise<OverviewData> {
     runs,
     groups,
     stubs: runs.filter((r) => r.isStub),
-    inProgress: runs.filter((r) => !r.isStub && !r.complete),
+    inProgress: sessions.filter((r) => !r.isStub && !r.complete),
     dataSource: sources.size === 0 ? "none" : sources.size > 1 ? "mixed" : [...sources][0]!,
   };
 }
@@ -338,6 +345,7 @@ function emptyData(runs: RunInfo[]): ResultsData {
     available: false,
     run: null,
     runs,
+    sessions: [],
     mode: "prompt",
     overall: null,
     clusters: 0,

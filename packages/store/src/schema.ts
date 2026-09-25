@@ -50,6 +50,13 @@ export const runs = pgTable("runs", {
   clientHash: text("client_hash"),
   /** Instance hashes in the order a hosted run presents them. */
   itemOrder: jsonb("item_order"),
+  /**
+   * `unreviewed` | `approved` | `rejected`. Set by a maintainer with `trolley db review`.
+   * Imported CLI runs are the maintainers' own and count as approved unless rejected.
+   */
+  review: text("review").notNull().default("unreviewed"),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  reviewNote: text("review_note"),
 });
 
 export const runSubjects = pgTable(

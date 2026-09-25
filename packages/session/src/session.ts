@@ -99,7 +99,11 @@ export async function startRun(db: Db, catalog: Catalog, input: StartInput): Pro
     throw new SessionError(404, "unknown_suite", `no suite '${suiteId}'. Available: ${catalog.suites.map((s) => s.id).join(", ")}`);
   }
 
-  const clientHash = input.clientKey ? sha256(`trolleybench:client:${input.clientKey}`) : null;
+  // Salted when TROLLEYBENCH_CLIENT_SALT is set: an address hash without a secret is
+  // cheap to reverse. The default reproduces the original scheme, so existing
+  // submitters keep grouping with their earlier runs.
+  const salt = process.env["TROLLEYBENCH_CLIENT_SALT"] ?? "trolleybench:client";
+  const clientHash = input.clientKey ? sha256(`${salt}:${input.clientKey}`) : null;
   if (clientHash) {
     const since = new Date(now.getTime() - 60 * 60 * 1000);
     const [row] = await db

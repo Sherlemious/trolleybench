@@ -289,6 +289,23 @@ node apps/cli/dist/index.js db init          # with the PRODUCTION DATABASE_URL
 Test data lives on a Neon **dev branch** (`br-jolly-tree-b256ofx2`), not production.
 Delete it when done, or keep it for trying changes.
 
+**Models, sessions and review.** A *run* is one session. The site shows *model
+entries*: every finished, non-rejected session of one model, in one mode, from one
+submitter, merged - each session kept as its own cluster, so repeat sessions give the
+bootstrap something to resample. Merging never crosses submitters (a salted address
+hash, server-side only; the site shows "community 1", "community 2"), so rejecting
+one person's run cannot touch anyone else's results. Maintainer (CLI) runs are their
+own submitter and count as approved.
+
+```bash
+trolley db review                                  # hosted runs awaiting review
+trolley db review <run_id> approve
+trolley db review <run_id> reject --note "why"     # hidden everywhere, never merged
+```
+
+Set `TROLLEYBENCH_CLIENT_SALT` on Vercel to salt submitter hashes (an unsalted IP hash is
+cheap to reverse). Setting it starts new submitter groups for runs made after it.
+
 **A bug worth remembering, same shape as §7:** `listStoredRuns` counted rows with a
 correlated subquery in which Drizzle rendered the outer `runs.run_id` unqualified, so it
 bound to the inner table and counted *every* row for *every* run. With one run in the

@@ -33,6 +33,8 @@ export interface PlayStep {
   cell: Record<string, string>;
   people: PlayPerson[];
   models: PlayModel[];
+  /** Agents that acted over MCP: a different measurement, shown apart from models. */
+  agents: PlayModel[];
 }
 
 const TOUR: Array<{ template: string; cell: Record<string, string>; title: string; blurb: string }> = [
@@ -71,6 +73,7 @@ const TOUR: Array<{ template: string; cell: Record<string, string>; title: strin
 export async function loadPlayData(): Promise<{ steps: PlayStep[]; hasModels: boolean }> {
   const [bench, overview] = await Promise.all([loadWorkbenchData(), loadOverview()]);
   const prompt = overview.groups.find((g) => g.mode === "prompt");
+  const agentGroup = overview.groups.find((g) => g.mode === "mcp_tool");
 
   const steps: PlayStep[] = [];
   for (const t of TOUR) {
@@ -94,14 +97,17 @@ export async function loadPlayData(): Promise<{ steps: PlayStep[]; hasModels: bo
       finding: b.finding,
       population: b.population,
     }));
-    const models: PlayModel[] = (comparison?.models ?? []).map((m) => {
-      // The trapdoor step is one level of a factor, so read the model at that level.
-      const level = m.byLevel.find((l) => l.level === t.cell["mechanism_variant"]);
-      const rate = level ? level.rate : m.rate;
-      return { label: m.run.label, slot: m.run.slot, rate: rate?.actRate ?? null, n: rate?.nValid ?? 0 };
-    });
+    const toPlay = (list: NonNullable<typeof comparison>["models"]): PlayModel[] =>
+      list.map((m) => {
+        // The trapdoor step is one level of a factor, so read the model at that level.
+        const level = m.byLevel.find((l) => l.level === t.cell["mechanism_variant"]);
+        const rate = level ? level.rate : m.rate;
+        return { label: m.run.label, slot: m.run.slot, rate: rate?.actRate ?? null, n: rate?.nValid ?? 0 };
+      });
+    const models = toPlay(comparison?.models ?? []);
+    const agents = toPlay(agentGroup?.comparisons.find((c) => c.templateId === t.template)?.models ?? []);
 
-    steps.push({ key: t.template, title: t.title, blurb: t.blurb, template, instance, cell: t.cell, people, models });
+    steps.push({ key: t.template, title: t.title, blurb: t.blurb, template, instance, cell: t.cell, people, models, agents });
   }
   return { steps, hasModels: (prompt?.models.length ?? 0) > 0 };
 }

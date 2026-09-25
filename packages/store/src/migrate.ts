@@ -96,6 +96,13 @@ alter table runs add column if not exists token_hash text;
 alter table runs add column if not exists client_hash text;
 alter table runs add column if not exists item_order jsonb;
 create index if not exists runs_client_idx on runs (client_hash, started_at);
+
+-- Review: a maintainer approves or rejects each hosted run. Rejected runs are hidden
+-- everywhere and never merged into a model's results. Unreviewed ones are shown, tagged.
+-- (No semicolons in these comments: statements are split on them.)
+alter table runs add column if not exists review text not null default 'unreviewed';
+alter table runs add column if not exists reviewed_at timestamptz;
+alter table runs add column if not exists review_note text;
 `;
 
 export interface MigrateReport {

@@ -43,6 +43,13 @@ export interface StoredRun {
   selfReported: boolean;
   /** Items the run set out to answer; `rows` below this means it is still in progress. */
   planned: number;
+  /** `unreviewed` | `approved` | `rejected`. */
+  review: string;
+  /**
+   * Salted hash of the submitter's address, for grouping one submitter's runs. Never
+   * send it to a browser: an unsalted address hash is cheap to reverse.
+   */
+  clientHash: string | null;
 }
 
 export async function listStoredRuns(db: Db): Promise<StoredRun[]> {
@@ -58,6 +65,8 @@ export async function listStoredRuns(db: Db): Promise<StoredRun[]> {
       origin: runs.origin,
       selfReported: runs.selfReported,
       itemOrder: runs.itemOrder,
+      review: runs.review,
+      clientHash: runs.clientHash,
       // Qualified by hand: inside a correlated subquery, Drizzle renders an outer column
       // unqualified, and an unqualified "run_id" binds to the INNER table - which made
       // this count every row in the database for every run.
@@ -92,7 +101,21 @@ export async function listStoredRuns(db: Db): Promise<StoredRun[]> {
     origin: r.origin,
     selfReported: r.selfReported,
     planned: Array.isArray(r.itemOrder) ? r.itemOrder.length : r.instanceCount,
+    review: r.review,
+    clientHash: r.clientHash,
   }));
+}
+
+export type ReviewDecision = "approved" | "rejected" | "unreviewed";
+
+/** Record a maintainer's decision on a run. Returns false if there is no such run. */
+export async function reviewRun(db: Db, runId: string, decision: ReviewDecision, note?: string): Promise<boolean> {
+  const updated = await db
+    .update(runs)
+    .set({ review: decision, reviewedAt: decision === "unreviewed" ? null : new Date(), reviewNote: note ?? null })
+    .where(eq(runs.runId, runId))
+    .returning({ runId: runs.runId });
+  return updated.length > 0;
 }
 
 export interface LoadedStoredRun {

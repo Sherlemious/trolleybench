@@ -8,7 +8,7 @@ import {
   validatePack,
   type LoadedPack,
 } from "@trolleybench/scenarios";
-import { listRuns, loadRun } from "./runs";
+import { listEntries, loadRun } from "./runs";
 import { loadSources, type UiBaseline, type UiReference } from "./sources";
 
 /**
@@ -104,21 +104,20 @@ export async function loadWorkbenchData(): Promise<WorkbenchData> {
     0,
   );
 
-  // The first committed run, real models before the echo stub. Committed samples
-  // rather than `runs/`, which is gitignored: what a deployed page replays is exactly
-  // what a fresh clone reproduces.
-  // Every finished model's answers, newest attempt per cell, so the workbench can show
-  // how each of them answered the exact prompt on screen.
-  const subjects = (await listRuns()).filter((r) => !r.isStub && r.complete);
+  // Every model entry's answers - one per SESSION per cell, newest attempt - so the
+  // workbench can show how each model answered the exact prompt on screen, and how
+  // often its sessions agreed.
+  const subjects = (await listEntries()).filter((r) => !r.isStub);
   const perSubject = await Promise.all(subjects.map((r) => loadRun(r.id)));
   const results: UiResult[] = [];
   perSubject.forEach((source, s) => {
-    const newest = new Map<string, { o: string; c: string | null; t: string }>();
+    const newest = new Map<string, { h: string; o: string; c: string | null; t: string }>();
     for (const r of source?.rows ?? []) {
-      const prev = newest.get(r.instance_hash);
-      if (!prev || r.timestamp > prev.t) newest.set(r.instance_hash, { o: r.outcome, c: r.chosen_option_id ?? null, t: r.timestamp });
+      const key = `${r.instance_hash}|${r.subject_id}`;
+      const prev = newest.get(key);
+      if (!prev || r.timestamp > prev.t) newest.set(key, { h: r.instance_hash, o: r.outcome, c: r.chosen_option_id ?? null, t: r.timestamp });
     }
-    for (const [h, v] of newest) results.push({ h, o: v.o, c: v.c, s });
+    for (const v of newest.values()) results.push({ h: v.h, o: v.o, c: v.c, s });
   });
   const sources = await loadSources();
 

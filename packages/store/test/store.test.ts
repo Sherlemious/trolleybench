@@ -9,7 +9,8 @@ import type { Db } from "../src/client.js";
 import { migrate } from "../src/migrate.js";
 import { ingestRun, resultId } from "../src/ingest.js";
 import { listRuns, modesPresent, outcomeBreakdown, ratesBy } from "../src/query.js";
-import { listStoredRuns, loadStoredRun } from "../src/read.js";
+import { listStoredRuns, loadStoredRun, reviewRun } from "../src/read.js";
+import { SCHEMA_SQL } from "../src/migrate.js";
 import * as schema from "../src/schema.js";
 
 /**
@@ -370,6 +371,27 @@ describe("reading a run back out", () => {
     expect(listed[0]!.subjects[0]!.provider).toBe("echo");
     expect(listed[0]!.rows).toBe(1);
     expect(await loadStoredRun(db, "nope")).toBeNull();
+  });
+});
+
+describe("schema SQL", () => {
+  it("splits into whole statements", () => {
+    // migrate() splits on ";". A semicolon inside a comment once cut a statement in two
+    // and broke every upgrade; every fragment must be a real statement.
+    const statements = SCHEMA_SQL.split(";")
+      .map((s) => s.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n").trim())
+      .filter((s) => s.length > 0);
+    for (const st of statements) expect(st, st.slice(0, 60)).toMatch(/^(create|alter)\s/i);
+  });
+});
+
+describe("review", () => {
+  it("records a decision, and reports an unknown run", async () => {
+    await ingestRun(db, { jsonlPath: await writeRun([row()]), instances: [instance(1)] });
+    expect((await listStoredRuns(db))[0]!.review).toBe("unreviewed");
+    expect(await reviewRun(db, "r1", "rejected", "spam")).toBe(true);
+    expect((await listStoredRuns(db))[0]!.review).toBe("rejected");
+    expect(await reviewRun(db, "missing", "approved")).toBe(false);
   });
 });
 

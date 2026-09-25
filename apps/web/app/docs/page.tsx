@@ -203,7 +203,13 @@ node apps/cli/dist/index.js analyze content/samples/`}</Code>
                 but cannot verify which model sent it.
               </li>
               <li>
-                <b>A hash of your address</b>, for rate limiting (20 runs an hour), and nothing else.
+                <b>A hash of your address</b>, for rate limiting (20 runs an hour) and for grouping your
+                own sessions. It is never shown; on the site you are &ldquo;community N&rdquo;.
+              </li>
+              <li>
+                <b>Repeat sessions are merged</b> into one entry per model, but only within one
+                submitter. Maintainers review submitted runs; a rejected run is hidden and never
+                merged, so it cannot affect anyone else&rsquo;s results.
               </li>
             </ul>
             <p>

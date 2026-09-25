@@ -16,11 +16,17 @@ export default async function Home() {
   const agents = overview.groups.find((g) => g.mode === "mcp_tool");
   const answers =
     overview.groups.flatMap((g) => g.models).reduce((n, m) => n + m.overall.total, 0);
+  // Distinct models, not runs or entries: three sessions of one model are one model.
+  const distinctModels = new Set(overview.groups.flatMap((g) => g.models.map((m) => m.run.label.trim().toLowerCase()))).size;
+  const sessions = overview.groups.flatMap((g) => g.models).reduce((n, m) => n + m.run.sessionIds.length, 0);
 
   // The headline is computed, never written: the footbridge gap, if there is a model.
   const footbridge = prompt?.comparisons.find((c) => c.templateId === "thomson.footbridge");
   const people = (footbridge?.baselines ?? []).map((b) => b.value).filter((v): v is number => v !== null);
   const models = (footbridge?.models ?? []).filter((m) => m.rate?.actRate !== null && m.rate?.actRate !== undefined);
+  const agentModels = (agents?.comparisons.find((c) => c.templateId === "thomson.footbridge")?.models ?? []).filter(
+    (m) => m.rate?.actRate !== null && m.rate?.actRate !== undefined,
+  );
 
   return (
     <main className="wrap">
@@ -50,8 +56,10 @@ export default async function Home() {
 
       <section className="hero-stats" aria-label="What is in the benchmark">
         <div>
-          <b>{(prompt?.models.length ?? 0) + (agents?.models.length ?? 0)}</b>
-          <span>models benchmarked</span>
+          <b>{distinctModels}</b>
+          <span>
+            models benchmarked · {sessions} session{sessions === 1 ? "" : "s"}
+          </span>
         </div>
         <div>
           <b>{answers.toLocaleString("en")}</b>
@@ -78,7 +86,12 @@ export default async function Home() {
           <p>
             Five people will die unless you push one large stranger off a bridge into the trolley&rsquo;s
             path. Most people refuse, even though they would pull a lever to make the same trade. Whether
-            models draw that line is one of the things this benchmark measures.{" "}
+            models draw that line is one of the things this benchmark measures.
+            {agentModels.length > 0
+              ? ` Placed in the situation as agents, acting through tools: ${agentModels
+                  .map((m) => `${m.run.label} ${Math.round(m.rate!.actRate! * 100)}%`)
+                  .join(" · ")}.`
+              : ""}{" "}
             <Link href="/results">See every scenario →</Link>
           </p>
         </section>

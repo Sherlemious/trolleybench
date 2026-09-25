@@ -45,11 +45,11 @@ export default function ResultsView({ data }: { data: ResultsData }) {
         <nav className="runs" aria-label="Choose a run">
           <Link href="/results" className="all">← all models</Link>
           <span className="runs-label">run</span>
-          {data.runs.filter((r) => r.complete || r.id === run.id).map((r) => (
+          {data.runs.map((r) => (
             <Link
               key={r.id}
               href={`/results/${encodeURIComponent(r.id)}`}
-              aria-current={r.id === run.id ? "page" : undefined}
+              aria-current={r.id === run.id || r.sessionIds.includes(run.id) ? "page" : undefined}
               className={r.isStub ? "stub" : undefined}
             >
               {r.label}
@@ -75,6 +75,7 @@ export default function ResultsView({ data }: { data: ResultsData }) {
           </strong>
           <span>
             {run.label} answered {o.total} of {run.planned} cells
+            {run.sessionIds.length > 1 ? ` across ${run.sessionIds.length} sessions` : ""}
             {run.finishedAt ? `, finishing ${run.finishedAt.slice(0, 10)}` : ", and the run is still in progress"}.{" "}
             {run.selfReported
               ? `Submitted through the site (${run.origin}): the answers are exactly what the caller sent back, but the site cannot verify which model produced them. `
@@ -82,11 +83,30 @@ export default function ResultsView({ data }: { data: ResultsData }) {
             {run.mode === "mcp_tool"
               ? "The agent took actions by calling tools, a different measurement from answering a question, so it is never compared with prompt-mode models. "
               : ""}
-            With a single subject, between-model intervals cannot be estimated; the intervals shown are
-            Wilson intervals over this run&rsquo;s own answers.
+            {run.sessionIds.length > 1
+              ? "Each session is resampled as a unit, so the effect intervals below measure how much this model varies from one session to the next."
+              : "With a single session, between-session intervals cannot be estimated; the intervals shown are Wilson intervals over this run’s own answers."}
           </span>
         </p>
       )}
+
+      <section className="sessions-strip" aria-label="Sessions">
+        <span className="ss-label">
+          {run.sessionIds.length > 1 ? `${run.sessionIds.length} sessions merged` : "1 session"} · submitted by{" "}
+          {run.submitter}
+        </span>
+        <span className={run.review === "approved" ? "tag ok" : "tag self"}>
+          {run.review === "approved" ? (run.selfReported ? "reviewed" : "maintainer run") : "unreviewed"}
+        </span>
+        {data.sessions.length > 1 || (data.sessions[0] && data.sessions[0].id !== run.id)
+          ? data.sessions.map((s, i) => (
+              <Link key={s.id} href={`/results/${encodeURIComponent(s.id)}`} className="ss-link">
+                session {i + 1}
+                <span className="ss-date">{s.startedAt.slice(0, 10)}</span>
+              </Link>
+            ))
+          : null}
+      </section>
 
       <section className="kpis" aria-label="Headline numbers">
         <Kpi

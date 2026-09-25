@@ -189,6 +189,29 @@ function Reveal({ step, mine, actLabel }: { step: PlayStep; mine: "act" | "omit"
           </li>
         ))}
       </ul>
+      {step.agents.length > 0 ? (
+        <>
+          <h3 className="reveal-sub">Agents placed in the situation</h3>
+          <p className="reveal-subnote">
+            These acted through tools rather than answering a question, a different measurement, so
+            they are shown apart.
+          </p>
+          <ul className="reveal-bars">
+            {step.agents.map((m) => (
+              <li key={m.label} className={`model s${m.slot}`}>
+                <span className="who">
+                  <span className="mono">{m.label}</span>
+                  <span className="sub">agent · {m.n} actions</span>
+                </span>
+                <span className="track">
+                  {m.rate !== null ? <span className="fill" style={{ width: `${m.rate * 100}%` }} /> : null}
+                </span>
+                <span className="val">{m.rate === null ? "declined" : `${Math.round(m.rate * 100)}%`}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
       {step.people
         .filter((p) => p.finding)
         .map((p) => (
@@ -256,6 +279,11 @@ function Summary({
               {s.models.map((m) => (
                 <span key={m.label} className={`chip s${m.slot}`}>
                   {m.label}: {m.rate === null ? "refused" : `${Math.round(m.rate * 100)}%`}
+                </span>
+              ))}
+              {s.agents.map((m) => (
+                <span key={`a-${m.label}`} className={`chip s${m.slot}`}>
+                  {m.label} (agent): {m.rate === null ? "declined" : `${Math.round(m.rate * 100)}%`}
                 </span>
               ))}
             </span>

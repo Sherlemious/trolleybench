@@ -8,8 +8,10 @@ import {
   connect,
   ingestRun,
   listRuns,
+  listStoredRuns,
   migrate,
   modesPresent,
+  reviewRun,
   outcomeBreakdown,
   ratesBy,
   type GroupableField,
@@ -206,6 +208,52 @@ function pct(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+/**
+ * `trolley db review` - approve or reject hosted runs.
+ *
+ *   trolley db review                         list runs awaiting review
+ *   trolley db review <run_id> approve        show it as reviewed
+ *   trolley db review <run_id> reject [--note "why"]   hide it everywhere, never merge it
+ *   trolley db review <run_id> reset          back to unreviewed
+ *
+ * The site merges a model's sessions only within one submitter, so rejecting one
+ * submitter's run never touches another's.
+ */
+export async function cmdDbReview(args: ParsedArgs): Promise<number> {
+  const [runId, action] = args.positionals;
+  const { db, close } = await open(args);
+  try {
+    if (!runId) {
+      const pending = (await listStoredRuns(db)).filter((r) => r.origin !== "cli" && r.review === "unreviewed");
+      if (pending.length === 0) {
+        console.log("nothing awaiting review.");
+        return 0;
+      }
+      console.log("awaiting review:\n");
+      for (const r of pending) {
+        const s = r.subjects[0];
+        console.log(`  ${r.runId}`);
+        console.log(`    ${s?.model ?? "?"} · ${r.mode} · via ${r.origin} · ${r.rows}/${r.planned} answered · started ${r.startedAt.slice(0, 16).replace("T", " ")}`);
+      }
+      console.log("\napprove or reject with: trolley db review <run_id> approve|reject [--note ...]");
+      return 0;
+    }
+    const decisions = { approve: "approved", reject: "rejected", reset: "unreviewed" } as const;
+    const decision = action && action in decisions ? decisions[action as keyof typeof decisions] : undefined;
+    if (!decision) throw new UsageError("usage: trolley db review <run_id> approve|reject|reset [--note <text>]");
+    const ok = await reviewRun(db, runId, decision, str(args, "note"));
+    if (!ok) {
+      console.error(`no run '${runId}'`);
+      return 1;
+    }
+    console.log(`${runId}: ${decision}`);
+    if (decision === "rejected") console.log("hidden from the site within a minute, and never merged into a model's results.");
+    return 0;
+  } finally {
+    await close();
+  }
+}
+
 export async function cmdDb(args: ParsedArgs): Promise<number> {
   const sub = args.positionals[0];
   const rest: ParsedArgs = { ...args, positionals: args.positionals.slice(1) };
@@ -219,6 +267,8 @@ export async function cmdDb(args: ParsedArgs): Promise<number> {
       return cmdDbRuns(rest);
     case "stats":
       return cmdDbStats(rest);
+    case "review":
+      return cmdDbReview(rest);
     default:
       throw new UsageError(
         "usage: trolley db <init|import|runs|stats>\n\n" +

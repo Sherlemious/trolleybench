@@ -378,29 +378,39 @@ export default function Workbench({ data }: { data: WorkbenchData }) {
                   ⟲ rewind
                 </button>
                 {data.meta.subjects.map((subject, s) => {
-                  const a = answers.find((x) => x.s === s);
-                  if (!a) {
+                  const mine = answers.filter((x) => x.s === s);
+                  const agent = subject.mode === "mcp_tool" ? " · agent" : "";
+                  if (mine.length === 0) {
                     return (
-                      <span key={subject.id} className={`model-play off s${subject.slot}`} title="This model's run did not include this variant">
-                        {subject.label}: not asked this variant
+                      <span key={subject.id} className={`model-play off s${subject.slot}`} title="This model's runs did not include this variant">
+                        {subject.label}
+                        {agent}: not asked this variant
                       </span>
                     );
                   }
-                  const option = a.c ? orderedOptions.find((o) => o.id === a.c) : undefined;
+                  // Several sessions may disagree: replay the most common choice, and say
+                  // how many sessions made it rather than hiding the split.
+                  const tally = new Map<string, number>();
+                  for (const a of mine) if (a.c) tally.set(a.c, (tally.get(a.c) ?? 0) + 1);
+                  const [topId, topN] = [...tally].sort((x, y) => y[1] - x[1])[0] ?? [null, 0];
+                  const option = topId ? orderedOptions.find((o) => o.id === topId) : undefined;
+                  const split = mine.length > 1 ? ` ${topN}/${mine.length}` : "";
                   return option ? (
                     <button
                       key={subject.id}
                       type="button"
                       className={`model-play s${subject.slot}`}
                       onClick={() => play(option.polarity, "subject", subject.label)}
-                      title={`${subject.label} chose: ${option.label}`}
+                      title={`${subject.label}: ${option.label}${mine.length > 1 ? ` in ${topN} of ${mine.length} sessions` : ""}`}
                     >
                       ▶ {subject.label}
-                      {subject.mode === "mcp_tool" ? " · agent" : ""} ({option.polarity})
+                      {agent} ({option.polarity}
+                      {split})
                     </button>
                   ) : (
-                    <span key={subject.id} className={`model-play off s${subject.slot}`} title={`${subject.label}: ${a.o}`}>
-                      {subject.label}: {a.o}
+                    <span key={subject.id} className={`model-play off s${subject.slot}`} title={`${subject.label}: ${mine[0]!.o}`}>
+                      {subject.label}
+                      {agent}: {mine[0]!.o}
                     </span>
                   );
                 })}

@@ -109,7 +109,8 @@ function ModePanel({ group }: { group: ModeGroup }) {
                   flipped with order
                 </th>
                 <th scope="col">answers</th>
-                <th scope="col">source</th>
+                <th scope="col" title="Separate runs of this model by the same submitter, merged. Each is resampled as a unit.">sessions</th>
+                <th scope="col">submitted by</th>
               </tr>
             </thead>
             <tbody>
@@ -130,10 +131,14 @@ function ModePanel({ group }: { group: ModeGroup }) {
                       {flip !== null && flip >= 0.4 ? " ⚠" : ""}
                     </td>
                     <td className="num">{m.overall.total}</td>
+                    <td className="num">{m.run.sessionIds.length}</td>
                     <td>
-                      <span className={m.run.selfReported ? "tag self" : "tag"}>
-                        {m.run.selfReported ? `self-reported · ${m.run.origin}` : "maintainer run"}
-                      </span>
+                      <span className="submitter">{m.run.submitter}</span>{" "}
+                      {m.run.selfReported ? (
+                        <span className={m.run.review === "approved" ? "tag ok" : "tag self"}>
+                          {m.run.review === "approved" ? `reviewed · ${m.run.origin}` : `unreviewed · ${m.run.origin}`}
+                        </span>
+                      ) : null}
                     </td>
                   </tr>
                 );
@@ -143,8 +148,10 @@ function ModePanel({ group }: { group: ModeGroup }) {
         </div>
         <p className="foot-note">
           A flip rate near 50% means answers track where an option sits rather than what it says; treat
-          that model&rsquo;s other numbers as artefacts. Self-reported runs were submitted through the
-          site, which records what the model answered but cannot verify which model answered.
+          that model&rsquo;s other numbers as artefacts. Repeat sessions of a model are merged only
+          within one submitter, so a rejected run never touches anyone else&rsquo;s results.
+          Self-reported runs were submitted through the site, which records what the model answered
+          but cannot verify which model answered; unreviewed ones have not been checked yet.
         </p>
 
         <h3 className="sub-h">Scenario by scenario</h3>

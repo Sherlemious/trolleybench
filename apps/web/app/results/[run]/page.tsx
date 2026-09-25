@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { listRuns, loadResultsData } from "../../../lib/analysis";
+import { listEntries, loadResultsData } from "../../../lib/analysis";
 import { findRun } from "../../../lib/runs";
 import ResultsView from "../ResultsView";
 
@@ -9,7 +9,7 @@ export const revalidate = 60;
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
-  return (await listRuns()).filter((r) => r.complete).map((r) => ({ run: r.id }));
+  return (await listEntries()).map((r) => ({ run: r.id }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ run: string }> }) {
