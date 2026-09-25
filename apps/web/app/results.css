@@ -498,3 +498,11 @@ table.heat td.na {
 .badge.checked a { color: inherit; }
 .badge.ok { background: var(--accent); color: var(--surface); }
 .dir-n { font-weight: 400; color: var(--slate); }
+
+/* Model identity slots. Colour follows the model, never its rank. */
+.s1 { --mc: var(--m1); } .s2 { --mc: var(--m2); } .s3 { --mc: var(--m3); } .s4 { --mc: var(--m4); }
+.mk.model { background: var(--mc, var(--accent)); }
+.cmp-row.model .who, .cmp-row.model .cmp-value { color: var(--mc, var(--accent)); }
+.cmp-row.model .whisker { background: var(--mc, var(--accent)); }
+.dir p, .cmp-finding p { margin: 0; }
+.cmp-finding .dir { margin-top: 6px; }

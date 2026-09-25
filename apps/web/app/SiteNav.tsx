@@ -1,16 +1,21 @@
 import Link from "next/link";
 
 const LINKS = [
-  { href: "/", key: "workbench", label: "Workbench" },
+  { href: "/play", key: "play", label: "Play" },
   { href: "/results", key: "results", label: "Results" },
+  { href: "/run", key: "run", label: "Run a model" },
+  { href: "/docs", key: "docs", label: "Docs" },
+  { href: "/workbench", key: "workbench", label: "Workbench" },
   { href: "/sources", key: "sources", label: "Sources" },
 ] as const;
 
-/** One bar across every page, so the three surfaces read as one site. */
-export default function SiteNav({ current }: { current: (typeof LINKS)[number]["key"] }) {
+export type NavKey = (typeof LINKS)[number]["key"] | "home";
+
+/** One bar across every page, so the surfaces read as one site. Scrolls sideways on phones. */
+export default function SiteNav({ current }: { current: NavKey }) {
   return (
     <nav className="sitenav" aria-label="Site">
-      <Link href="/" className="wordmark">
+      <Link href="/" className="wordmark" aria-current={current === "home" ? "page" : undefined}>
         trolley<b>bench</b>
       </Link>
       <ul>

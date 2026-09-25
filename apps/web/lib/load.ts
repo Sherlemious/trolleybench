@@ -8,8 +8,7 @@ import {
   validatePack,
   type LoadedPack,
 } from "@trolleybench/scenarios";
-import { readResults } from "@trolleybench/runner";
-import { listRuns } from "./analysis";
+import { listRuns, loadRun } from "./runs";
 import { loadSources, type UiBaseline, type UiReference } from "./sources";
 
 /**
@@ -58,6 +57,16 @@ export interface UiResult {
   h: string;
   o: string;
   c: string | null;
+  /** Index into meta.subjects. */
+  s: number;
+}
+
+export interface UiSubject {
+  id: string;
+  label: string;
+  slot: number;
+  mode: string;
+  selfReported: boolean;
 }
 
 export interface WorkbenchData {
@@ -69,8 +78,8 @@ export interface WorkbenchData {
     orders: OptionOrder[];
     validationErrors: number;
     resultsRunId: string | null;
-    /** The subject whose recorded answers the workbench replays. */
-    subject: { id: string; label: string; isStub: boolean } | null;
+    /** Every finished model run, in colour-slot order. Stubs are left out. */
+    subjects: UiSubject[];
   };
   templates: UiTemplate[];
   instances: UiInstance[];
@@ -98,10 +107,19 @@ export async function loadWorkbenchData(): Promise<WorkbenchData> {
   // The first committed run, real models before the echo stub. Committed samples
   // rather than `runs/`, which is gitignored: what a deployed page replays is exactly
   // what a fresh clone reproduces.
-  const subject = (await listRuns())[0] ?? null;
-  const { rows } = subject
-    ? await readResults(resolve(ROOT, "content", "samples", `${subject.id}.jsonl`)).catch(() => ({ rows: [] }))
-    : { rows: [] };
+  // Every finished model's answers, newest attempt per cell, so the workbench can show
+  // how each of them answered the exact prompt on screen.
+  const subjects = (await listRuns()).filter((r) => !r.isStub && r.complete);
+  const perSubject = await Promise.all(subjects.map((r) => loadRun(r.id)));
+  const results: UiResult[] = [];
+  perSubject.forEach((source, s) => {
+    const newest = new Map<string, { o: string; c: string | null; t: string }>();
+    for (const r of source?.rows ?? []) {
+      const prev = newest.get(r.instance_hash);
+      if (!prev || r.timestamp > prev.t) newest.set(r.instance_hash, { o: r.outcome, c: r.chosen_option_id ?? null, t: r.timestamp });
+    }
+    for (const [h, v] of newest) results.push({ h, o: v.o, c: v.c, s });
+  });
   const sources = await loadSources();
 
   const grid: VariationGrid = suite.variations;
@@ -114,8 +132,8 @@ export async function loadWorkbenchData(): Promise<WorkbenchData> {
       frameworks: grid.moral_framework,
       orders: grid.option_order,
       validationErrors,
-      resultsRunId: rows[0]?.run_id ?? null,
-      subject: subject ? { id: subject.id, label: subject.label, isStub: subject.isStub } : null,
+      resultsRunId: subjects[0]?.id ?? null,
+      subjects: subjects.map((r) => ({ id: r.id, label: r.label, slot: r.slot, mode: r.mode, selfReported: r.selfReported })),
     },
     templates: packs.flatMap((p) =>
       p.pack.templates.map((t) => ({
@@ -156,7 +174,7 @@ export async function loadWorkbenchData(): Promise<WorkbenchData> {
       })),
       system_prompt: i.system_prompt ?? null,
     })),
-    results: rows.map((r) => ({ h: r.instance_hash, o: r.outcome, c: r.chosen_option_id ?? null })),
+    results,
     baselines: sources.baselines,
     references: sources.byKey,
   };

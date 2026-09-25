@@ -1,6 +1,6 @@
-import { loadWorkbenchData } from "../lib/load";
-import SiteNav from "./SiteNav";
-import Workbench from "./Workbench";
+import { loadWorkbenchData } from "../../lib/load";
+import SiteNav from "../SiteNav";
+import Workbench from "../Workbench";
 
 /**
  * Packs are read from `content/` on the server, so the browser can never drift out of
@@ -8,11 +8,15 @@ import Workbench from "./Workbench";
  * pure function of committed content plus a committed results file, which is why this
  * deploys with no database and no worker.
  */
-export const dynamic = "force-static";
+export const revalidate = 300;
+
+export const metadata = {
+  title: "Workbench · trolleybench",
+  description: "Every scenario is a template with factors. Change one and watch the stimulus and its content hash recompute.",
+};
 
 export default async function Page() {
   const data = await loadWorkbenchData();
-  const subject = data.meta.subject && !data.meta.subject.isStub ? data.meta.subject.label : null;
 
   return (
     <main className="wrap">
@@ -25,7 +29,7 @@ export default async function Page() {
           <p className="lede">
             Every scenario here is a template with factors, not a fixed string. Change a factor, a
             framework or the option order and watch the stimulus &mdash; and its content hash &mdash;
-            recompute. Answer it yourself, then see how people and {subject ?? "the model"} did.
+            recompute. Answer it yourself, then see how people and every benchmarked model answered the same prompt.
           </p>
         </div>
         <dl className="ident">

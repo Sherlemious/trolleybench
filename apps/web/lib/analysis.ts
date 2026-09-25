@@ -1,8 +1,5 @@
-import { resolve } from "node:path";
-import { readFile, readdir } from "node:fs/promises";
-import { expandInstances, loadPackDir } from "@trolleybench/scenarios";
-import { readResults } from "@trolleybench/runner";
-import { RunManifest, partitionByMode, type ScenarioInstance } from "@trolleybench/spec";
+import { cache } from "react";
+import { partitionByMode, type ScenarioInstance } from "@trolleybench/spec";
 import {
   amce,
   authoritativeRows,
@@ -14,10 +11,11 @@ import {
   type AmceResult,
   type RateSummary,
 } from "@trolleybench/analysis";
+import { findRun, listRuns, loadRun, packsOnce, type RunInfo, type RunSource } from "./runs";
 import { loadSources, type UiBaseline } from "./sources";
 
-const ROOT = resolve(process.cwd(), "..", "..");
-const SAMPLES = resolve(ROOT, "content", "samples");
+export type { RunInfo } from "./runs";
+export { listRuns } from "./runs";
 
 /** Axes worth offering. Each names its own reference level. */
 export const AXES = [
@@ -56,26 +54,31 @@ export interface UiRate {
   refusal: number;
 }
 
-/** One scenario's human baselines beside the model's answers on the matching cells. */
+export type UiSourcedBaseline = UiBaseline & { short: string; href: string | null; viaShort: string | null };
+
+/** One model's answers on the cells a scenario's human studies asked about. */
+export interface ModelOnScenario {
+  run: RunInfo;
+  rate: UiRate | null;
+  /** For a qualitative baseline: the model per level of the contrasted factor. */
+  byLevel: Array<{ level: string; rate: UiRate }>;
+}
+
+/** One scenario's human baselines beside one or more models. */
 export interface Comparison {
   templateId: string;
   title: string;
-  /** Which cells the model rate is computed over, in words. */
+  /** Which cells the model rates are computed over, in words. */
   cells: string;
-  model: UiRate | null;
-  /** For a qualitative baseline: the model's rate per level of the contrasted factor. */
-  byLevel: Array<{ level: string; rate: UiRate }>;
-  baselines: Array<UiBaseline & { short: string; href: string | null; viaShort: string | null }>;
+  baselines: UiSourcedBaseline[];
+  models: ModelOnScenario[];
 }
 
-export interface RunInfo {
-  /** File stem under content/samples, and the URL segment. */
-  id: string;
-  runId: string;
-  label: string;
-  provider: string;
-  /** A test double, not a model. Every page that shows it has to say so. */
-  isStub: boolean;
+export interface RunSummary {
+  run: RunInfo;
+  overall: RateSummary;
+  flipRate: number | null;
+  pairs: number;
 }
 
 export interface ResultsData {
@@ -83,10 +86,6 @@ export interface ResultsData {
   run: RunInfo | null;
   runs: RunInfo[];
   mode: string;
-  suite: string | null;
-  toolVersion: string | null;
-  startedAt: string | null;
-  finishedAt: string | null;
   overall: RateSummary | null;
   clusters: number;
   superseded: number;
@@ -108,174 +107,164 @@ export interface ResultsData {
   };
 }
 
-/**
- * Every committed run under content/samples, real models first.
- *
- * Samples rather than `runs/`: the site is built from committed content, so what a
- * deployed page shows is exactly what a fresh clone reproduces.
- */
-export async function listRuns(): Promise<RunInfo[]> {
-  const files = (await readdir(SAMPLES).catch(() => [] as string[])).filter((f) =>
-    f.endsWith(".manifest.json"),
-  );
-  const runs: RunInfo[] = [];
-  for (const file of files) {
-    const manifest = RunManifest.parse(JSON.parse(await readFile(resolve(SAMPLES, file), "utf8")));
-    const subject = manifest.spec.subjects[0];
-    const provider = subject?.provider ?? "unknown";
-    runs.push({
-      id: file.replace(/\.manifest\.json$/, ""),
-      runId: manifest.run_id,
-      // A stub's resolved string encodes its behaviour ("echo/echo#first_option"); the
-      // page says what it is in words instead.
-      label:
-        provider === "echo"
-          ? (subject?.model ?? "echo")
-          : (manifest.subjects_resolved[0]?.provider_model_string ?? subject?.model ?? manifest.run_id),
-      provider,
-      isStub: provider === "echo",
-    });
-  }
-  return runs.sort((a, b) => Number(a.isStub) - Number(b.isStub) || a.label.localeCompare(b.label));
+/** One elicitation mode's models. Modes are never pooled, so each gets its own panel. */
+export interface ModeGroup {
+  mode: string;
+  models: RunSummary[];
+  comparisons: Comparison[];
 }
 
+export interface OverviewData {
+  runs: RunInfo[];
+  /** `prompt` first, then `mcp_tool`; a mode appears only if it has a finished run. */
+  groups: ModeGroup[];
+  stubs: RunInfo[];
+  inProgress: RunInfo[];
+  dataSource: "database" | "file" | "mixed" | "none";
+}
+
+// ---------------------------------------------------------------------------------
+
+interface Prepared {
+  source: RunSource;
+  scoped: NonNullable<ReturnType<ReturnType<typeof partitionByMode>["get"]>>;
+  superseded: number;
+  orphans: number;
+}
+
+/** Newest attempt per cell, then partition by mode: the same two steps `trolley analyze` takes. */
+const prepare = cache(async (id: string): Promise<Prepared | null> => {
+  const source = await loadRun(id);
+  if (!source || source.rows.length === 0) return null;
+  const authoritative = authoritativeRows(source.rows);
+  const scoped = partitionByMode(authoritative).get(source.info.mode);
+  if (!scoped) return null;
+  return {
+    source,
+    scoped,
+    superseded: source.rows.length - authoritative.length,
+    orphans: authoritative.filter((r) => !source.instances.has(r.instance_hash)).length,
+  };
+});
+
+const templatesOnce = cache(async () => {
+  const packs = await packsOnce();
+  return packs.flatMap((lp) => lp.pack.templates);
+});
+
 /**
- * Analysis of one committed run, computed at build time.
- *
- * Deliberately the same code path the CLI uses — `trolley analyze` and this page call
- * into @trolleybench/analysis with the same arguments, so a number shown here and a
- * number printed in a terminal cannot diverge. Recomputing rather than shipping a
- * precomputed JSON is what makes that true.
+ * The model's rate on the cells a scenario's studies asked about: the factor levels the
+ * baseline names (5 versus 1, in every study here), no framework steering, both option
+ * orders pooled so position cannot masquerade as preference.
  */
-export async function loadResultsData(id?: string): Promise<ResultsData> {
-  const runs = await listRuns();
-  const run = runs.find((r) => r.id === id) ?? runs[0];
-  const empty = emptyData(runs);
-  if (!run) return empty;
+async function modelOnScenario(
+  p: Prepared,
+  templateId: string,
+  baselines: UiBaseline[],
+): Promise<ModelOnScenario> {
+  const factors = baselines.find((b) => b.value !== null)?.factors ?? baselines[0]?.factors ?? {};
+  const matches = (i: ScenarioInstance) =>
+    i.template_id === templateId &&
+    i.variation.moral_framework === "none" &&
+    Object.entries(factors).every(([f, level]) => i.factors[f] === level);
 
-  const loaded = await readResults(resolve(SAMPLES, `${run.id}.jsonl`)).catch(() => null);
-  if (!loaded || loaded.rows.length === 0) return empty;
+  const whole = ratesBy(p.scoped, p.source.instances, (i) => (matches(i) ? "m" : null)).get("m");
 
-  const manifest = RunManifest.parse(
-    JSON.parse(await readFile(resolve(SAMPLES, `${run.id}.manifest.json`), "utf8")),
-  );
-  const packs = await loadPackDir(resolve(ROOT, "content", "packs"));
-
-  // Grid AND selection from the manifest, the same rule the CLI follows. A manifest
-  // that cannot reconstruct its own instance set shows up here as orphans rather than
-  // as quietly missing arms.
-  const expanded = expandInstances(packs, manifest.spec.variations, {
-    packs: manifest.spec.selection?.packs,
-    templates: manifest.spec.selection?.templates,
-    tags: manifest.spec.selection?.tags,
-    max_instances: manifest.spec.selection?.max_instances,
-    seed: manifest.spec.seed,
-  });
-  const instances = new Map<string, ScenarioInstance>(expanded.map((i) => [i.hash, i]));
-
-  const authoritative = authoritativeRows(loaded.rows);
-  const orphans = authoritative.filter((r) => !instances.has(r.instance_hash)).length;
-
-  const partitioned = partitionByMode(authoritative);
-  const mode = manifest.spec.elicitation_mode;
-  const scoped = partitioned.get(mode);
-  if (!scoped) return empty;
-
-  const bootstrap = { samples: 1000, seed: 0 };
-
-  const amces: UiAmce[] = AXES.map(({ spec, label, baseline }) => {
-    try {
-      return toUi(amce(scoped, instances, parseAxis(spec), { ...bootstrap, baseline }), label);
-    } catch (cause) {
-      return {
-        axis: spec,
-        label,
-        baseline,
-        levels: [],
-        unavailable: cause instanceof Error ? cause.message : String(cause),
-      };
+  // A baseline with no number predicts a direction across one factor. Show the model
+  // per level of that factor, in design order, so the direction can be read off.
+  const byLevel: ModelOnScenario["byLevel"] = [];
+  if (baselines.length > 0 && baselines.every((b) => b.value === null)) {
+    const tpl = (await templatesOnce()).find((t) => t.id === templateId);
+    const contrast = tpl?.factors[0];
+    if (contrast) {
+      const per = ratesBy(p.scoped, p.source.instances, (i) =>
+        matches(i) ? (i.factors[contrast.id] ?? null) : null,
+      );
+      for (const level of contrast.levels) {
+        const r = per.get(level.id);
+        if (r) byLevel.push({ level: level.id, rate: toRate(r) });
+      }
     }
-  });
+  }
+  return { run: p.source.info, rate: whole ? toRate(whole) : null, byLevel };
+}
 
-  const consistency = optionOrderConsistency(scoped, instances, bootstrap);
-  const refusals = refusalProfile(scoped, instances);
-
-  // Templates in pack order, frameworks in the run's own design order. Neither is ever
-  // re-sorted by a result: invariant 3 forbids a ranked view of levels.
-  const templates = packs.flatMap((lp) => lp.pack.templates.map((t) => ({ id: t.id, title: t.title })));
-  const titleOf = Object.fromEntries(templates.map((t) => [t.id, t.title]));
-  const frameworks = manifest.spec.variations.moral_framework;
-
-  const gridRates = ratesBy(scoped, instances, (i) => `${i.template_id}|${i.variation.moral_framework}`);
-  const cells: Record<string, UiRate> = {};
-  for (const [k, r] of gridRates) cells[k] = toRate(r);
-
-  // ---- people versus model ---------------------------------------------------------
-  // The model rate is taken over the cells a study actually asked about: the factor
-  // levels the baseline names (5 versus 1, in every study here), no framework steering,
-  // and both option orders pooled so position cannot masquerade as preference.
+async function comparisonsFor(prepared: Prepared[]): Promise<Comparison[]> {
   const sources = await loadSources();
-  const comparisons: Comparison[] = [];
+  const templates = await templatesOnce();
+  const out: Comparison[] = [];
   for (const t of templates) {
     const baselines = sources.baselines.filter((b) => b.templateId === t.id);
     if (baselines.length === 0) continue;
-
     const factors = baselines.find((b) => b.value !== null)?.factors ?? baselines[0]!.factors;
-    const matches = (i: ScenarioInstance) =>
-      i.template_id === t.id &&
-      i.variation.moral_framework === "none" &&
-      Object.entries(factors).every(([f, level]) => i.factors[f] === level);
-
-    const model = ratesBy(scoped, instances, (i) => (matches(i) ? "model" : null)).get("model");
-
-    // A baseline with no number predicts a direction across one factor. Show the model
-    // per level of that factor, in design order, so the direction can be read off.
-    const byLevel: Comparison["byLevel"] = [];
-    if (baselines.every((b) => b.value === null)) {
-      const tpl = packs.flatMap((lp) => lp.pack.templates).find((x) => x.id === t.id);
-      const contrast = tpl?.factors[0];
-      if (contrast) {
-        const per = ratesBy(scoped, instances, (i) =>
-          matches(i) ? (i.factors[contrast.id] ?? null) : null,
-        );
-        for (const level of contrast.levels) {
-          const r = per.get(level.id);
-          if (r) byLevel.push({ level: level.id, rate: toRate(r) });
-        }
-      }
-    }
-
     const described = Object.entries(factors)
       .map(([f, level]) => `${f} = ${level}`)
       .join(", ");
-    comparisons.push({
+    out.push({
       templateId: t.id,
       title: t.title,
       cells: `${described ? `${described}, ` : ""}no framework, both option orders`,
-      model: model ? toRate(model) : null,
-      byLevel,
       baselines: baselines.map((b) => ({
         ...b,
         short: sources.byKey[b.citekey]?.short ?? b.citekey,
         href: sources.byKey[b.citekey]?.href ?? null,
         viaShort: b.via ? (sources.byKey[b.via]?.short ?? b.via) : null,
       })),
+      models: await Promise.all(prepared.map((p) => modelOnScenario(p, t.id, baselines))),
     });
   }
+  return out;
+}
+
+// ---------------------------------------------------------------------------------
+
+/**
+ * Every figure for one run, computed through the same @trolleybench/analysis calls
+ * `trolley analyze` makes, so a number here and a number in a terminal cannot diverge.
+ */
+export async function loadResultsData(idOrStem?: string): Promise<ResultsData> {
+  const runs = await listRuns();
+  const info = await findRun(idOrStem ?? runs.find((r) => !r.isStub)?.id);
+  const empty = emptyData(runs);
+  if (!info) return empty;
+  const p = await prepare(info.id);
+  if (!p) return { ...empty, run: info };
+
+  const { scoped, source } = p;
+  const instances = source.instances;
+  const bootstrap = { samples: 1000, seed: 0 };
+
+  const amces: UiAmce[] = AXES.map(({ spec, label, baseline }) => {
+    try {
+      return toUi(amce(scoped, instances, parseAxis(spec), { ...bootstrap, baseline }), label);
+    } catch (cause) {
+      return { axis: spec, label, baseline, levels: [], unavailable: cause instanceof Error ? cause.message : String(cause) };
+    }
+  });
+
+  const consistency = optionOrderConsistency(scoped, instances, bootstrap);
+  const refusals = refusalProfile(scoped, instances);
+
+  // Templates in pack order, frameworks in design order. Neither is ever re-sorted by a
+  // result: invariant 3 forbids a ranked view of levels.
+  const templates = (await templatesOnce()).map((t) => ({ id: t.id, title: t.title }));
+  const frameworks = [...new Set([...instances.values()].map((i) => i.variation.moral_framework))];
+  const order = ["none", "act_utilitarian", "rule_utilitarian", "kantian_deontological", "virtue_ethics", "contractualist"];
+  frameworks.sort((a, b) => rank(order, a) - rank(order, b));
+
+  const gridRates = ratesBy(scoped, instances, (i) => `${i.template_id}|${i.variation.moral_framework}`);
+  const cells: Record<string, UiRate> = {};
+  for (const [k, r] of gridRates) cells[k] = toRate(r);
 
   return {
     available: true,
-    run,
+    run: info,
     runs,
-    mode,
-    suite: manifest.spec.suite ?? null,
-    toolVersion: manifest.tool_version,
-    startedAt: manifest.started_at,
-    finishedAt: manifest.finished_at ?? null,
+    mode: info.mode,
     overall: refusals.overall,
-    clusters: new Set(authoritative.map((r) => r.subject_id)).size,
-    superseded: loaded.rows.length - authoritative.length,
-    orphans,
+    clusters: new Set(scopedRows(p).map((r) => r.subject_id)).size,
+    superseded: p.superseded,
+    orphans: p.orphans,
     amces,
     consistency: {
       pairs: consistency.pairs,
@@ -287,14 +276,61 @@ export async function loadResultsData(id?: string): Promise<ResultsData> {
     refusalByTemplate: templates
       .map((t) => {
         const g = refusals.byTemplate.find((x) => x.group === t.id);
-        return g
-          ? { group: t.id, title: t.title, refusalRate: g.rates.refusalRate, n: g.rates.total }
-          : null;
+        return g ? { group: t.id, title: t.title, refusalRate: g.rates.refusalRate, n: g.rates.total } : null;
       })
       .filter((x): x is NonNullable<typeof x> => x !== null),
-    comparisons,
+    comparisons: await comparisonsFor([p]),
     grid: { templates, frameworks, cells },
   };
+}
+
+/**
+ * Every finished real model, beside the people, one panel per elicitation mode.
+ * Stubs and unfinished hosted runs are listed, never plotted.
+ */
+export async function loadOverview(): Promise<OverviewData> {
+  const runs = await listRuns();
+  const finished = runs.filter((r) => !r.isStub && r.complete);
+
+  const groups: ModeGroup[] = [];
+  for (const mode of ["prompt", "mcp_tool"] as const) {
+    const inMode = finished.filter((r) => r.mode === mode);
+    const prepared = (await Promise.all(inMode.map((r) => prepare(r.id)))).filter((p): p is Prepared => p !== null);
+    if (prepared.length === 0) continue;
+    groups.push({
+      mode,
+      models: prepared.map((p) => {
+        const c = optionOrderConsistency(p.scoped, p.source.instances, { samples: 200, seed: 0 });
+        return {
+          run: p.source.info,
+          overall: refusalProfile(p.scoped, p.source.instances).overall,
+          flipRate: c.flipRate,
+          pairs: c.pairs,
+        };
+      }),
+      comparisons: await comparisonsFor(prepared),
+    });
+  }
+
+  const sources = new Set(runs.map((r) => r.source));
+  return {
+    runs,
+    groups,
+    stubs: runs.filter((r) => r.isStub),
+    inProgress: runs.filter((r) => !r.isStub && !r.complete),
+    dataSource: sources.size === 0 ? "none" : sources.size > 1 ? "mixed" : [...sources][0]!,
+  };
+}
+
+// ---------------------------------------------------------------------------------
+
+function scopedRows(p: Prepared) {
+  return authoritativeRows(p.source.rows);
+}
+
+function rank(order: string[], v: string): number {
+  const i = order.indexOf(v);
+  return i === -1 ? order.length : i;
 }
 
 function emptyData(runs: RunInfo[]): ResultsData {
@@ -303,10 +339,6 @@ function emptyData(runs: RunInfo[]): ResultsData {
     run: null,
     runs,
     mode: "prompt",
-    suite: null,
-    toolVersion: null,
-    startedAt: null,
-    finishedAt: null,
     overall: null,
     clusters: 0,
     superseded: 0,
@@ -320,20 +352,11 @@ function emptyData(runs: RunInfo[]): ResultsData {
 }
 
 function toRate(r: RateSummary & { interval: [number, number] | null }): UiRate {
-  return {
-    actRate: r.actRate,
-    interval: r.interval,
-    nValid: r.nValid,
-    total: r.total,
-    refusal: r.counts.refusal,
-  };
+  return { actRate: r.actRate, interval: r.interval, nValid: r.nValid, total: r.total, refusal: r.counts.refusal };
 }
 
 function toUi(result: AmceResult, label: string): UiAmce {
-  const corrected = benjaminiHochberg(
-    result.levels.map((l) => ({ label: l.level, pValue: l.pValue })),
-  );
-
+  const corrected = benjaminiHochberg(result.levels.map((l) => ({ label: l.level, pValue: l.pValue })));
   return {
     axis: result.axis,
     label,

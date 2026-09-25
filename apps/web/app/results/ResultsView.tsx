@@ -32,7 +32,7 @@ export default function ResultsView({ data }: { data: ResultsData }) {
 
       <header className="page-head">
         <div>
-          <p className="eyebrow">Results · {data.suite ?? "ad hoc design"}</p>
+          <p className="eyebrow">Results · {run.suite ?? "ad hoc design"} · from {run.source === "database" ? "the database" : "committed files"}</p>
           <h1>
             {run.isStub ? "Pipeline check: the echo test double" : run.label}
           </h1>
@@ -43,11 +43,12 @@ export default function ResultsView({ data }: { data: ResultsData }) {
           </p>
         </div>
         <nav className="runs" aria-label="Choose a run">
+          <Link href="/results" className="all">← all models</Link>
           <span className="runs-label">run</span>
-          {data.runs.map((r) => (
+          {data.runs.filter((r) => r.complete || r.id === run.id).map((r) => (
             <Link
               key={r.id}
-              href={`/results/${r.id}`}
+              href={`/results/${encodeURIComponent(r.id)}`}
               aria-current={r.id === run.id ? "page" : undefined}
               className={r.isStub ? "stub" : undefined}
             >
@@ -69,12 +70,20 @@ export default function ResultsView({ data }: { data: ResultsData }) {
         </p>
       ) : (
         <p className="notice info">
-          <strong>One small local model, one pass.</strong>
+          <strong>
+            {run.mode === "mcp_tool" ? "An agent, acting over MCP." : run.selfReported ? "Self-reported run." : "Maintainer run."}
+          </strong>
           <span>
-            {run.label} answered each of the {o.total} cells once, run offline through Ollama
-            {data.finishedAt ? ` on ${data.finishedAt.slice(0, 10)}` : ""}. With a single subject the
-            between-model intervals cannot be estimated; the intervals shown are Wilson intervals over
-            this run&rsquo;s answers, which measure sampling within the run and nothing wider.
+            {run.label} answered {o.total} of {run.planned} cells
+            {run.finishedAt ? `, finishing ${run.finishedAt.slice(0, 10)}` : ", and the run is still in progress"}.{" "}
+            {run.selfReported
+              ? `Submitted through the site (${run.origin}): the answers are exactly what the caller sent back, but the site cannot verify which model produced them. `
+              : "Run with the command-line tool and committed to the repository. "}
+            {run.mode === "mcp_tool"
+              ? "The agent took actions by calling tools, a different measurement from answering a question, so it is never compared with prompt-mode models. "
+              : ""}
+            With a single subject, between-model intervals cannot be estimated; the intervals shown are
+            Wilson intervals over this run&rsquo;s own answers.
           </span>
         </p>
       )}
@@ -114,7 +123,7 @@ export default function ResultsView({ data }: { data: ResultsData }) {
             <em>should</em> do &mdash; so read the gaps as direction, not distance. The spread
             between the studies themselves is part of the finding.
           </p>
-          <Compare comparisons={data.comparisons} subject={run.label} />
+          <Compare comparisons={data.comparisons} />
         </div>
       </section>
 
@@ -211,9 +220,9 @@ export default function ResultsView({ data }: { data: ResultsData }) {
 
       <footer className="foot">
         <span>
-          run <code>{run.runId}</code>
-          {data.toolVersion ? ` · trolley ${data.toolVersion}` : null}
-          {data.startedAt ? ` · started ${data.startedAt.slice(0, 19).replace("T", " ")} UTC` : null}
+          run <code>{run.id}</code>
+          {` · trolley ${run.toolVersion}`}
+          {` · started ${run.startedAt.slice(0, 19).replace("T", " ")} UTC`}
           {data.superseded > 0 ? ` · ${data.superseded} superseded rows ignored` : null}
           {data.orphans > 0 ? ` · ${data.orphans} unjoinable rows excluded` : null}
         </span>

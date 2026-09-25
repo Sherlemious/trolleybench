@@ -46,4 +46,12 @@ export default {
   reactStrictMode: true,
   // Scenario packs are read from content/ at build time, which sits outside this app.
   outputFileTracingRoot: repoRoot,
+  // ...and at RUN time too: the hosted-run API, the MCP server and every revalidating
+  // page read content/ through computed paths, which output tracing cannot see. Without
+  // this, they build fine and fail on the first request in production.
+  outputFileTracingIncludes: {
+    "/**/*": ["../../content/**/*"],
+  },
+  // Lets a production build run beside `next dev` without the two fighting over .next.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
 };

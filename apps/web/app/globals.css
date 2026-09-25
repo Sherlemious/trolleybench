@@ -29,6 +29,11 @@ button { font-family: inherit; }
     --dead: #9aa4ac;
     --dead-soft: #e8ebed;
     --on-act: #10161c; /* ink: measured higher contrast than white at every heat level */
+    /* Model identity, validated with the dataviz palette checks (light surface). */
+    --m1: #008c99;
+    --m2: #4a3aa7;
+    --m3: #d55181;
+    --m4: #c98500;
 
     --f-ui: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --f-text: "Spectral", Georgia, "Times New Roman", serif;
@@ -59,6 +64,10 @@ button { font-family: inherit; }
       --dead: #5e6a73;
       --dead-soft: #1a232a;
       --on-act: #10161c;
+      --m1: #1ba6b2;
+      --m2: #9085e9;
+      --m3: #d55181;
+      --m4: #c98500;
     }
   }
 
@@ -83,6 +92,10 @@ button { font-family: inherit; }
     --dead: #5e6a73;
     --dead-soft: #1a232a;
     --on-act: #10161c;
+    --m1: #1ba6b2;
+    --m2: #9085e9;
+    --m3: #d55181;
+    --m4: #c98500;
   }
 
   body {

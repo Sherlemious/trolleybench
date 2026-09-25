@@ -1,29 +1,23 @@
-import type { Comparison, UiRate } from "../lib/analysis";
+import type { Comparison, ModelOnScenario, UiRate } from "../lib/analysis";
 import { MEASURE_LABEL } from "../lib/sources";
 
 /**
- * People versus the model, one small multiple per scenario, on a shared 0-100% axis.
+ * People versus models, one small multiple per scenario, on a shared 0-100% axis.
  *
- * Encoding: a published human result is a hollow marker in ink; the model is a filled
- * marker in the accent colour. Identity is carried by shape and by the row label as
- * well as colour, so nothing depends on telling two hues apart.
+ * Encoding: a published human result is a hollow marker in ink; each model is a filled
+ * marker in its own categorical slot, kept for good so adding a model never repaints
+ * the others. Every row is labelled, so identity never rests on colour alone.
  *
- * The two intervals are not the same kind of thing, and the drawing keeps them apart:
- * a study's interval is what that paper reported; the model's is a Wilson interval over
- * this run's answers on these cells. Neither says how far apart the two populations
- * are, because the question wording and the measure differ - which is why the row
- * label names the measure.
+ * The intervals are not the same kind of thing, and the drawing keeps them apart: a
+ * study's interval is what that paper reported; a model's is a Wilson interval over its
+ * answers on these cells. Neither says how far apart the populations are, because the
+ * wording and the measure differ - which is why each human row names its measure.
  */
-export default function Compare({
-  comparisons,
-  subject,
-}: {
-  comparisons: Comparison[];
-  subject: string;
-}) {
+export default function Compare({ comparisons }: { comparisons: Comparison[] }) {
   if (comparisons.length === 0) {
-    return <p className="empty">No scenario in this run has a published human baseline.</p>;
+    return <p className="empty">No scenario here has a published human baseline.</p>;
   }
+  const models = comparisons[0]!.models.map((m) => m.run);
 
   return (
     <div className="compare">
@@ -31,9 +25,11 @@ export default function Compare({
         <span>
           <i className="mk human" /> published human result
         </span>
-        <span>
-          <i className="mk model" /> {subject}
-        </span>
+        {models.map((r) => (
+          <span key={r.id}>
+            <i className={`mk model s${r.slot}`} /> {r.label}
+          </span>
+        ))}
         <span>
           <i className="wk" /> 95% interval
         </span>
@@ -70,50 +66,60 @@ export default function Compare({
                 />
               ))}
 
-            {c.byLevel.length > 0
-              ? c.byLevel.map((l) => (
+            {c.models.map((m) =>
+              m.byLevel.length > 0 ? (
+                m.byLevel.map((l) => (
                   <Row
-                    key={l.level}
+                    key={`${m.run.id}-${l.level}`}
                     kind="model"
+                    slot={m.run.slot}
                     label={l.level}
-                    sub={`${subject} · chose act · n=${l.rate.nValid}${l.rate.refusal ? ` · ${l.rate.refusal} refused` : ""}`}
+                    sub={`${m.run.label} · chose act · n=${l.rate.nValid}${l.rate.refusal ? ` · ${l.rate.refusal} refused` : ""}`}
                     value={l.rate.actRate}
                     interval={l.rate.interval}
-                    tip={modelTip(subject, l.rate, l.level)}
+                    tip={modelTip(m.run.label, l.rate, l.level)}
                   />
                 ))
-              : (
-                  <Row
-                    kind="model"
-                    label={subject}
-                    sub={
-                      c.model
-                        ? `chose act · n=${c.model.nValid}${c.model.refusal ? ` · ${c.model.refusal} refused` : ""}`
-                        : "no answers on these cells"
-                    }
-                    value={c.model?.actRate ?? null}
-                    interval={c.model?.interval ?? null}
-                    tip={c.model ? modelTip(subject, c.model) : `${subject}: no answers on these cells`}
-                  />
-                )}
+              ) : (
+                <Row
+                  key={m.run.id}
+                  kind="model"
+                  slot={m.run.slot}
+                  label={m.run.label}
+                  sub={
+                    m.rate
+                      ? `chose act · n=${m.rate.nValid}${m.rate.refusal ? ` · ${m.rate.refusal} refused` : ""}`
+                      : "no answers on these cells"
+                  }
+                  value={m.rate?.actRate ?? null}
+                  interval={m.rate?.interval ?? null}
+                  tip={m.rate ? modelTip(m.run.label, m.rate) : `${m.run.label}: no answers on these cells`}
+                />
+              ),
+            )}
           </div>
 
           {c.baselines
             .filter((b) => b.finding)
             .map((b) => (
-              <p className="cmp-finding" key={b.id}>
-                <strong>
-                  {b.href ? (
-                    <a href={b.href} target="_blank" rel="noreferrer">
-                      {b.short}
-                    </a>
-                  ) : (
-                    b.short
-                  )}
-                  :
-                </strong>{" "}
-                {b.finding} <Direction comparison={c} />
-              </p>
+              <div className="cmp-finding" key={b.id}>
+                <p>
+                  <strong>
+                    {b.href ? (
+                      <a href={b.href} target="_blank" rel="noreferrer">
+                        {b.short}
+                      </a>
+                    ) : (
+                      b.short
+                    )}
+                    :
+                  </strong>{" "}
+                  {b.finding}
+                </p>
+                {c.models.map((m) => (
+                  <Direction key={m.run.id} model={m} />
+                ))}
+              </div>
             ))}
         </section>
       ))}
@@ -122,21 +128,19 @@ export default function Compare({
 }
 
 /** For the qualitative Greene contrast: does the model reproduce trapdoor > footbridge? */
-function Direction({ comparison }: { comparison: Comparison }) {
-  const rate = (level: string) => comparison.byLevel.find((l) => l.level === level)?.rate.actRate ?? null;
+function Direction({ model }: { model: ModelOnScenario }) {
+  const rate = (level: string) => model.byLevel.find((l) => l.level === level)?.rate.actRate ?? null;
   const trapdoor = rate("trapdoor");
   const footbridge = rate("footbridge");
   if (trapdoor === null || footbridge === null) return null;
   const same = trapdoor > footbridge;
-  const n = Math.min(...comparison.byLevel.map((l) => l.rate.nValid));
+  const n = Math.min(...model.byLevel.map((l) => l.rate.nValid));
   return (
-    <span className={same ? "dir agree" : "dir differ"}>
-      {same ? "✓" : "✗"} The model {same ? "shows the same direction" : "does not show this direction"}: trapdoor{" "}
+    <p className={same ? "dir agree" : "dir differ"}>
+      {same ? "✓" : "✗"} {model.run.label} {same ? "shows the same direction" : "does not show this direction"}: trapdoor{" "}
       {pct(trapdoor)} vs footbridge {pct(footbridge)}.
-      {n < 10 ? (
-        <span className="dir-n"> With {n} answers per level this is an observation, not evidence.</span>
-      ) : null}
-    </span>
+      {n < 10 ? <span className="dir-n"> With {n} answers per level this is an observation, not evidence.</span> : null}
+    </p>
   );
 }
 
@@ -158,6 +162,7 @@ function Axis() {
 
 function Row({
   kind,
+  slot,
   label,
   sub,
   value,
@@ -165,14 +170,16 @@ function Row({
   tip,
 }: {
   kind: "human" | "model";
+  slot?: number;
   label: React.ReactNode;
   sub: string;
   value: number | null;
   interval: [number, number] | null;
   tip: string;
 }) {
+  const s = kind === "model" ? ` s${slot ?? 1}` : "";
   return (
-    <div className={`cmp-row ${kind}`} role="listitem">
+    <div className={`cmp-row ${kind}${s}`} role="listitem">
       <span className="cmp-label">
         <span className="who">{label}</span>
         <span className="sub">{sub}</span>
@@ -185,7 +192,13 @@ function Row({
           />
         ) : null}
         {value !== null ? (
-          <span className={`mk ${kind}`} style={{ left: `${value * 100}%` }} tabIndex={0} data-tip={tip} aria-label={tip} />
+          <span
+            className={`mk ${kind}${s}`}
+            style={{ left: `${value * 100}%` }}
+            tabIndex={0}
+            data-tip={tip}
+            aria-label={tip}
+          />
         ) : null}
       </span>
       <span className="cmp-value">{pct(value)}</span>

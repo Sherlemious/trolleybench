@@ -3,12 +3,15 @@ import "./globals.css";
 import "./scene.css";
 import "./results.css";
 import "./site.css";
+import "./pages.css";
 
 export const metadata: Metadata = {
-  title: "trolleybench — scenario workbench",
+  title: "trolleybench",
   description:
-    "Browse the parameterized moral-dilemma scenario library: change a design factor and watch the stimulus and its content hash recompute.",
+    "An open, reproducible benchmark of how language models answer moral dilemmas, beside published human responses.",
 };
+
+export const viewport = { width: "device-width", initialScale: 1, themeColor: [{ media: "(prefers-color-scheme: light)", color: "#f4f6f7" }, { media: "(prefers-color-scheme: dark)", color: "#0d1217" }] };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
