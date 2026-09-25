@@ -41,6 +41,6 @@ export async function loadSuiteFile(path: string): Promise<SuiteDef> {
   return result.data;
 }
 
-function formatZodIssues(issues: readonly { path: (string | number)[]; message: string }[]): string {
+export function formatZodIssues(issues: readonly { path: (string | number)[]; message: string }[]): string {
   return issues.map((i) => `  ${i.path.join(".") || "<root>"}: ${i.message}`).join("\n");
 }

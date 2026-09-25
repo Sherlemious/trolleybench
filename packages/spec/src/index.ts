@@ -8,5 +8,6 @@ export * from "./result.js";
 export * from "./mode-scoped.js";
 export * from "./run.js";
 export * from "./suite.js";
+export * from "./baseline.js";
 
 export const SPEC_VERSION = "0.1.0";
