@@ -219,6 +219,7 @@ Every one produced plausible-looking wrong numbers rather than a crash. Kept bec
 | CTE aliased a table Drizzle didn't | PGlite caught it; a mock would have waved it through |
 | `expand --suite` ignored the suite | canon.v0 sized at **36 against a lock of 144** — a 4× under-report of what a run costs |
 | Inspect metric on the default `scores=` | outcome names coerced to `0.0`, so `unparseable_rate` read **0.000 when nothing parsed** |
+| `.gitignore` had `runs/`, unanchored | the whole hosted-run **HTTP API was never committed**; the local build had it, the deploy silently didn't |
 
 Two are worth internalising:
 

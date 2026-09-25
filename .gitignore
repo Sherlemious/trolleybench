@@ -5,8 +5,8 @@ dist/
 next-env.d.ts
 *.tsbuildinfo
 .DS_Store
-runs/
-exports/
+/runs/
+/exports/
 .turbo/
 coverage/
 drizzle/
