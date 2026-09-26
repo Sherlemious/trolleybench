@@ -330,3 +330,17 @@ function labelFor(provider: string, model: string | undefined, resolved: string 
   if (provider === "echo") return model ?? "echo";
   return resolved ?? model ?? "unknown model";
 }
+
+/** How a run reached the site, in words, e.g. "via MCP · agent". */
+export function via(r: Pick<RunInfo, "origin" | "mode">): string {
+  switch (r.origin) {
+    case "mcp":
+      return r.mode === "mcp_tool" ? "via MCP · agent" : "via MCP · answering";
+    case "api":
+      return "via API";
+    case "browser":
+      return "via browser";
+    default:
+      return "command line";
+  }
+}

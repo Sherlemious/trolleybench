@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { loadOverview, type ModeGroup, type RunInfo } from "../../lib/analysis";
+import { via } from "../../lib/runs";
 import Compare from "../Compare";
 import SiteNav from "../SiteNav";
 
@@ -136,7 +137,7 @@ function ModePanel({ group }: { group: ModeGroup }) {
                       <span className="submitter">{m.run.submitter}</span>{" "}
                       {m.run.selfReported ? (
                         <span className={m.run.review === "approved" ? "tag ok" : "tag self"}>
-                          {m.run.review === "approved" ? `reviewed · ${m.run.origin}` : `unreviewed · ${m.run.origin}`}
+                          {m.run.review === "approved" ? `reviewed · ${via(m.run)}` : `unreviewed · ${via(m.run)}`}
                         </span>
                       ) : null}
                     </td>

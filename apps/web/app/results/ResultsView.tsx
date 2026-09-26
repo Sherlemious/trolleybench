@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ResultsData } from "../../lib/analysis";
+import { via } from "../../lib/runs";
 import Compare from "../Compare";
 import Forest from "../Forest";
 import Grid from "../Grid";
@@ -78,7 +79,7 @@ export default function ResultsView({ data }: { data: ResultsData }) {
             {run.sessionIds.length > 1 ? ` across ${run.sessionIds.length} sessions` : ""}
             {run.finishedAt ? `, finishing ${run.finishedAt.slice(0, 10)}` : ", and the run is still in progress"}.{" "}
             {run.selfReported
-              ? `Submitted through the site (${run.origin}): the answers are exactly what the caller sent back, but the site cannot verify which model produced them. `
+              ? `Submitted through the site, ${via(run)}: the answers are exactly what the caller sent back, but the site cannot verify which model produced them. `
               : "Run with the command-line tool and committed to the repository. "}
             {run.mode === "mcp_tool"
               ? "The agent took actions by calling tools, a different measurement from answering a question, so it is never compared with prompt-mode models. "
