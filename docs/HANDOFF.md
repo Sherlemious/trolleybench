@@ -5,26 +5,25 @@ state, what will bite you, and what to do next.*
 
 ---
 
-## 1. Do this first
+## 1. Credentials: resolved 2026-10-09
 
-**Rotate the Neon database password.** A crash on 2026-09-19 threw outside the route's
-error handler, and Next's default handler wrote the whole connection string — password
-included — into Vercel's runtime logs, where anyone with project access can read it.
-Vercel says it plainly: *"Removing this variable from Vercel does not revoke the
-credential."* The leak is closed in code (three ways, §6) but the credential itself is
-still live.
+**The leaked Neon password has been rotated.** A crash on 2026-09-19 threw outside the
+route's error handler, and Next's default handler wrote the whole connection string,
+password included, into Vercel's runtime logs. The leak was closed in code (three ways,
+§6), and on 2026-10-08 the password itself was rotated. The old one is rejected
+(`28P01`), and `.env.local` plus Vercel's production `DATABASE_URL` carry the new one.
+If it ever needs doing again, rotate in the Neon console, update `.env.local`, then
+update the variable in Vercel and **redeploy**. A running deployment keeps the old value
+and can look healthy on warm connections until its next cold start.
 
-```bash
-# 1. rotate in the Neon console, then:
-#    update .env.local   (DATABASE_URL, pooled endpoint)
-npx vercel env rm DATABASE_URL production --yes
-printf '%s' "$NEW_URL" | npx vercel env add DATABASE_URL production
-```
+**The account-wide API key `neon mcp -y` minted (id `3347589`) is revoked.** The Neon
+MCP server is now configured at user scope with OAuth and no key in any config file. Do
+not run `neon mcp -y` again: it mints another account-wide key and writes it into
+several tools' configs. Other tools it configured (Cursor, Claude Desktop) may still
+reference the revoked key and need re-pointing if used.
 
-**Also outstanding:** `neon mcp -y` minted an **account-wide** API key (id `3347589`)
-written into seven config files outside this repo. Neon's own warning: *"This key reaches
-everything your account can, in every organization."* Revoke with
-`neon api-keys revoke 3347589` when you no longer need the MCP server.
+`TROLLEYBENCH_CLIENT_SALT` is set on Vercel production (2026-10-09), so submitter
+hashes are salted from that date on.
 
 ---
 
