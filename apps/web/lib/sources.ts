@@ -41,12 +41,7 @@ export interface SourcesData {
   templateTitles: Record<string, string>;
 }
 
-export const MEASURE_LABEL: Record<HumanBaseline["measure"], string> = {
-  permissible: "judged it permissible",
-  should_act: "said the agent should act",
-  would_act: "said they would act",
-  acceptability_rating: "rated acceptability",
-};
+export { MEASURE_LABEL } from "./measure";
 
 export async function loadSources(): Promise<SourcesData> {
   const packs = await loadPackDir(resolve(ROOT, "content", "packs"));

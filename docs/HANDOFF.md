@@ -65,7 +65,8 @@ third-party data.
 **Built:** `spec`, `engine`, `scenarios`, `adapters`, `runner`, `scoring`, `analysis`,
 `store`, `inspect-export`; `apps/cli`, `apps/web`.
 
-**Empty stubs:** `packages/i18n`, `packages/loaders`, `apps/mcp`, `apps/worker`.
+**Empty stubs:** `packages/i18n`, `packages/loaders`, `apps/mcp`, `apps/worker`, `python/`. (The MCP
+endpoint and hosted API live in `apps/web/app/api/`, not in `apps/mcp` or `apps/worker`.)
 
 **Phase status** (detail in `docs/PLAN.md § Status`):
 
@@ -77,7 +78,12 @@ third-party data.
   written — *a real AMCE from a real model run* — is **open**, same blocker.
 - **Phase 2** — workbench and results explorer shipped. Factor explorer across languages
   and the consented human-baseline flow are not built.
-- **Phases 3–5** — not started.
+- **Phase 3** — `trolley-subject` is built as a remote MCP endpoint (`apps/web/app/api/mcp`),
+  act and answer modes. `trolley-lab` and the Subject Provider Protocol are not.
+- **Phase 4** — hosted API (`/api/v1/runs`) and Neon storage are built; no worker queue is
+  needed. Consented human baselines are not built.
+- **Phase 5** — `/results` works as an early leaderboard with maintainer review; the frozen-suite
+  leaderboard, community packs, Python client and paper library are not built.
 
 ---
 

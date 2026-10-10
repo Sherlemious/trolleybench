@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { loadOverview, type ModeGroup, type RunInfo } from "../../lib/analysis";
 import { via } from "../../lib/runs";
-import Compare from "../Compare";
+import { modelMeta } from "../../lib/family";
+import ModePanel from "./ModePanel";
 import SiteNav from "../SiteNav";
 
 /**
@@ -60,9 +61,11 @@ export default async function ResultsOverview() {
         </p>
       ) : null}
 
-      {data.groups.map((g) => (
-        <ModePanel key={g.mode} group={g} />
-      ))}
+      {data.groups.map((g, i) => {
+        const copy = MODE_COPY[g.mode] ?? { title: g.mode, body: "" };
+        const meta = Object.fromEntries(g.models.map((m) => [m.run.id, { ...modelMeta(m.run.label), via: via(m.run) }]));
+        return <ModePanel key={g.mode} group={g} title={copy.title} body={copy.body} meta={meta} caveat={i === 0} />;
+      })}
 
       {data.inProgress.length > 0 || data.stubs.length > 0 ? (
         <section className="panel">
@@ -83,82 +86,6 @@ export default async function ResultsOverview() {
         </section>
       ) : null}
     </main>
-  );
-}
-
-function ModePanel({ group }: { group: ModeGroup }) {
-  const copy = MODE_COPY[group.mode] ?? { title: group.mode, body: "" };
-  return (
-    <section className="panel">
-      <div className="panel-head">
-        <h2>{copy.title}</h2>
-        <span className="hint">
-          elicitation mode <code>{group.mode}</code>
-        </span>
-      </div>
-      <div className="panel-body">
-        <p className="intro">{copy.body}</p>
-
-        <div className="model-table-wrap">
-          <table className="model-table">
-            <thead>
-              <tr>
-                <th scope="col">model</th>
-                <th scope="col">chose to act</th>
-                <th scope="col">refused</th>
-                <th scope="col" title="Share of paired cells whose answer changed when the options swapped places. 50% is a coin.">
-                  flipped with order
-                </th>
-                <th scope="col">answers</th>
-                <th scope="col" title="Separate runs of this model by the same submitter, merged. Each is resampled as a unit.">sessions</th>
-                <th scope="col">submitted by</th>
-              </tr>
-            </thead>
-            <tbody>
-              {group.models.map((m) => {
-                const flip = m.flipRate;
-                return (
-                  <tr key={m.run.id}>
-                    <th scope="row">
-                      <Link href={`/results/${encodeURIComponent(m.run.id)}`} className={`model-link s${m.run.slot}`}>
-                        <i className="mk-dot" aria-hidden="true" />
-                        {m.run.label}
-                      </Link>
-                    </th>
-                    <td className="num">{m.overall.actRate === null ? "n/a" : `${Math.round(m.overall.actRate * 100)}%`}</td>
-                    <td className="num">{`${Math.round(m.overall.refusalRate * 100)}%`}</td>
-                    <td className={`num ${flip !== null && flip >= 0.4 ? "warn" : ""}`}>
-                      {flip === null ? "n/a" : `${Math.round(flip * 100)}%`}
-                      {flip !== null && flip >= 0.4 ? " ⚠" : ""}
-                    </td>
-                    <td className="num">{m.overall.total}</td>
-                    <td className="num">{m.run.sessionIds.length}</td>
-                    <td>
-                      <span className="submitter">{m.run.submitter}</span>{" "}
-                      {m.run.selfReported ? (
-                        <span className={m.run.review === "approved" ? "tag ok" : "tag self"}>
-                          {m.run.review === "approved" ? `reviewed · ${via(m.run)}` : `unreviewed · ${via(m.run)}`}
-                        </span>
-                      ) : null}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <p className="foot-note">
-          A flip rate near 50% means answers track where an option sits rather than what it says; treat
-          that model&rsquo;s other numbers as artefacts. Repeat sessions of a model are merged only
-          within one submitter, so a rejected run never touches anyone else&rsquo;s results.
-          Self-reported runs were submitted through the site, which records what the model answered
-          but cannot verify which model answered; unreviewed ones have not been checked yet.
-        </p>
-
-        <h3 className="sub-h">Scenario by scenario</h3>
-        <Compare comparisons={group.comparisons} />
-      </div>
-    </section>
   );
 }
 
