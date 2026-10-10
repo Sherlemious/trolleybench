@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import "./scene.css";
 import "./results.css";
@@ -24,7 +25,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;1,400&display=swap"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-M3QHMNTN74" strategy="afterInteractive" />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-M3QHMNTN74');`}
+        </Script>
+      </body>
     </html>
   );
 }

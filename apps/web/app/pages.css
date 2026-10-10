@@ -366,3 +366,11 @@ a.primary:active, button.primary:active, a.ghost:active, button.ghost:active { t
 .submitter { font-size: 13px; color: var(--ink-2); }
 .reveal-sub { margin: 18px 0 2px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--slate); }
 .reveal-subnote { margin: 0 0 10px; font-size: 12.5px; color: var(--slate); }
+
+/* Phones: the model name column is the widest cell, so the numbers sat off-screen with no
+   hint they were there. Let long names wrap, and fade the scrolling edges as a cue. */
+@media (max-width: 560px) {
+  .model-table th:first-child, .model-table td:first-child { white-space: normal; min-width: 128px; max-width: 150px; overflow-wrap: anywhere; }
+  .model-table-wrap { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+  .sitenav ul { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); }
+}
