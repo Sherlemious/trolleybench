@@ -547,3 +547,57 @@ table.mx tbody th { text-align: left; font-family: var(--f-mono); font-size: 12p
 table.mx td .n { display: block; font-size: 10.5px; opacity: 0.65; }
 table.mx td.h { color: var(--slate); }
 table.mx td.thin { opacity: 0.7; }
+
+/* Summary strip, filter bar, dropdown, segmented view switch. */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0 0 16px; }
+.stats > div { border: 1px solid var(--line-soft); border-radius: 10px; padding: 10px 12px; background: var(--surface); }
+.stats dt { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--slate); }
+.stats dd { margin: 2px 0 0; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink); }
+
+.filters { position: sticky; top: 0; z-index: 5; background: var(--bg, var(--surface)); padding: 10px 0; margin-top: 0; border-bottom: 1px solid var(--line-soft); }
+.f-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.f-bar input[type="search"] { flex: 1 1 180px; max-width: 300px; }
+.f-toggle { display: none; }
+.f-body { display: flex; flex-direction: column; gap: 10px; }
+
+.menu { position: relative; }
+.menu-btn { display: inline-flex; align-items: center; gap: 8px; }
+.menu-btn svg { opacity: 0.6; }
+.menu-btn[aria-expanded="true"] { border-color: var(--ink); }
+.menu-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--slate); }
+.menu-pop {
+  position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; min-width: 210px; margin: 0; padding: 6px; list-style: none;
+  background: var(--surface); border: 1px solid var(--line-soft); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+}
+.menu-pop button {
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; font: inherit; font-size: 14px; color: var(--ink);
+  background: none; border: 0; border-radius: 8px; padding: 8px 10px; cursor: pointer; min-height: 36px;
+}
+.menu-pop button:hover, .menu-pop button:focus-visible { background: var(--accent-soft, rgba(0, 0, 0, 0.06)); }
+.menu-pop .tick { width: 14px; color: var(--accent); font-weight: 700; }
+
+.seg { display: inline-flex; border: 1px solid var(--line-soft); border-radius: 999px; padding: 2px; background: var(--surface); margin-left: auto; }
+.seg button { font: inherit; font-size: 13px; padding: 4px 12px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); cursor: pointer; min-height: 28px; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+
+.f-active { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.pill { font: inherit; font-size: 12.5px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--accent); background: var(--accent-soft, transparent); color: var(--ink); cursor: pointer; }
+.pill:hover { background: var(--accent); color: var(--surface); }
+
+.th-btn { font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.th-btn:hover { color: var(--ink); text-decoration: underline; }
+.model-table tbody tr:hover { background: var(--accent-soft, rgba(0, 0, 0, 0.03)); }
+.act-cell .bar { display: inline-block; width: 64px; height: 6px; margin-right: 8px; border-radius: 3px; background: var(--line-soft); vertical-align: middle; overflow: hidden; }
+.act-cell .bar i { display: block; height: 100%; background: var(--act, var(--accent)); border-radius: 3px; }
+
+@media (max-width: 560px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .f-toggle { display: inline-flex; align-items: center; }
+  .f-body { display: none; }
+  .f-body[data-open="true"] { display: flex; }
+  .seg { margin-left: 0; width: 100%; }
+  .seg button { flex: 1; }
+  .filters { position: static; }
+  .act-cell .bar { width: 40px; }
+}
+

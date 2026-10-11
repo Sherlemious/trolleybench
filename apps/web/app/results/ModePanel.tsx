@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ModeGroup } from "../../lib/analysis";
 import type { ModelMeta } from "../../lib/family";
 import Compare, { type CompareView } from "../Compare";
@@ -12,6 +12,13 @@ export interface PanelMeta extends ModelMeta {
 }
 
 type Sort = "act-desc" | "act-asc" | "flip" | "answers" | "name";
+/** A column header picks the sort that column offers; clicking again reverses it where it can. */
+const HEADER_SORT: Record<string, [Sort, Sort?]> = {
+  model: ["name"],
+  act: ["act-desc", "act-asc"],
+  flip: ["flip"],
+  answers: ["answers"],
+};
 type Facet = "company" | "family" | "review" | "source";
 
 const VIEWS: Array<{ id: CompareView; label: string; hint: string }> = [
@@ -74,6 +81,65 @@ function Chips({
   );
 }
 
+/** A dropdown that matches the chips: a button, a small popover, a tick on the current choice. */
+function Menu<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: Array<{ id: T; label: string }>;
+  onChange: (v: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent) => {
+      if (!root.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", away);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", away);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+  const current = options.find((o) => o.id === value)?.label ?? "";
+  return (
+    <div className="menu" ref={root}>
+      <button type="button" className="fchip menu-btn" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <span className="menu-label">{label}</span>
+        {current}
+        <svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true">
+          <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {open ? (
+        <ul className="menu-pop" role="listbox" aria-label={label}>
+          {options.map((o) => (
+            <li key={o.id} role="option" aria-selected={o.id === value}>
+              <button
+                type="button"
+                onClick={() => {
+                  onChange(o.id);
+                  setOpen(false);
+                }}
+              >
+                <span className="tick">{o.id === value ? "✓" : ""}</span>
+                {o.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 export default function ModePanel({
   group,
   title,
@@ -97,6 +163,7 @@ export default function ModePanel({
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("act-desc");
   const [view, setView] = useState<CompareView>("rows");
+  const [open, setOpen] = useState(false); // filters, on narrow screens
 
   const rows = useMemo(
     () =>
@@ -130,6 +197,20 @@ export default function ModePanel({
             : a.m.run.label.localeCompare(b.m.run.label),
   );
 
+  const sortBy = (col: string) => {
+    const [a, b] = HEADER_SORT[col];
+    setSort(sort === a && b ? b : a);
+  };
+  const arrow = (col: string) => (HEADER_SORT[col].includes(sort) ? (sort === "act-asc" ? " ↑" : " ↓") : "");
+  const acts = visible
+    .map((r) => r.m.overall.actRate)
+    .filter((x): x is number => x !== null)
+    .sort((a, b) => a - b);
+  const totalAnswers = visible.reduce((n, r) => n + r.m.overall.total, 0);
+  const median = acts.length ? acts[Math.floor(acts.length / 2)] : null;
+  const pct = (x: number) => `${Math.round(x * 100)}%`;
+  const chosen = (["company", "family", "review", "source"] as const).flatMap((f) => [...picked[f]].map((v) => ({ f, v })));
+
   const ids = new Set(visible.map((r) => r.m.run.id));
   const comparisons = group.comparisons.map((c) => ({ ...c, models: c.models.filter((m) => ids.has(m.run.id)) }));
   const active = picked.company.size + picked.family.size + picked.review.size + picked.source.size + (query.trim() ? 1 : 0);
@@ -151,53 +232,74 @@ export default function ModePanel({
       <div className="panel-body">
         <p className="intro">{body}</p>
 
+        {visible.length > 0 ? (
+          <dl className="stats">
+            <div>
+              <dt>Models</dt>
+              <dd>{visible.length}</dd>
+            </div>
+            <div>
+              <dt>Answers</dt>
+              <dd>{totalAnswers.toLocaleString()}</dd>
+            </div>
+            <div>
+              <dt>Median acts</dt>
+              <dd>{median === null ? "n/a" : pct(median)}</dd>
+            </div>
+            <div>
+              <dt>Range</dt>
+              <dd>{acts.length > 1 ? `${pct(acts[0])} – ${pct(acts[acts.length - 1])}` : "n/a"}</dd>
+            </div>
+          </dl>
+        ) : null}
+
         <div className="filters">
+          <div className="f-bar">
+            <input
+              type="search"
+              placeholder="Find a model"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Filter by model name"
+            />
+            {rows.length > 1 ? (
+              <button type="button" className="fchip f-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
+                Filters
+                {active > 0 ? <span className="c">{active}</span> : null}
+              </button>
+            ) : null}
+            <Menu label="Sort" value={sort} options={SORTS} onChange={setSort} />
+            <div className="seg" role="group" aria-label="View">
+              {VIEWS.map((v) => (
+                <button key={v.id} type="button" aria-pressed={view === v.id} title={v.hint} onClick={() => setView(v.id)}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          </div>
           {rows.length > 1 ? (
-            <>
-              <div className="f-row">
-                <span className="f-name">Find</span>
-                <input
-                  type="search"
-                  placeholder="model name"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  aria-label="Filter by model name"
-                />
-                <label className="f-name" htmlFor={`sort-${group.mode}`}>
-                  Sort
-                </label>
-                <select id={`sort-${group.mode}`} value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="fchip">
-                  {SORTS.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="f-body" data-open={open}>
               <Chips name="Company" options={facet("company")} picked={picked.company} onPick={pick("company")} />
               <Chips name="Family" options={facet("family")} picked={picked.family} onPick={pick("family")} />
               <Chips name="Review" options={facet("review")} picked={picked.review} onPick={pick("review")} />
               <Chips name="Source" options={facet("source")} picked={picked.source} onPick={pick("source")} />
-            </>
+            </div>
           ) : null}
-          <div className="f-row">
-            <span className="f-name">View</span>
-            {VIEWS.map((v) => (
-              <button key={v.id} type="button" className="fchip" aria-pressed={view === v.id} title={v.hint} onClick={() => setView(v.id)}>
-                {v.label}
-              </button>
-            ))}
-            {active > 0 ? (
-              <>
-                <span className="f-count">
-                  {visible.length} of {rows.length} models
-                </span>
-                <button type="button" className="f-reset" onClick={reset}>
-                  clear filters
+          {active > 0 ? (
+            <div className="f-active" aria-live="polite">
+              <span className="f-count">
+                {visible.length} of {rows.length} models
+              </span>
+              {chosen.map(({ f, v }) => (
+                <button key={f + v} type="button" className="pill" onClick={() => pick(f)(v)} aria-label={`Remove filter ${v}`}>
+                  {v} <span aria-hidden="true">×</span>
                 </button>
-              </>
-            ) : null}
-          </div>
+              ))}
+              <button type="button" className="f-reset" onClick={reset}>
+                clear all
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {visible.length === 0 ? (
@@ -207,13 +309,27 @@ export default function ModePanel({
             <table className="model-table">
               <thead>
                 <tr>
-                  <th scope="col">model</th>
-                  <th scope="col">chose to act</th>
+                  <th scope="col" aria-sort={sort === "name" ? "ascending" : "none"}>
+                    <button type="button" className="th-btn" onClick={() => sortBy("model")}>
+                      model{arrow("model")}
+                    </button>
+                  </th>
+                  <th scope="col" aria-sort={sort === "act-desc" ? "descending" : sort === "act-asc" ? "ascending" : "none"}>
+                    <button type="button" className="th-btn" onClick={() => sortBy("act")}>
+                      chose to act{arrow("act")}
+                    </button>
+                  </th>
                   <th scope="col">refused</th>
                   <th scope="col" title="Share of paired cells whose answer changed when the options swapped places. 50% is a coin.">
-                    flipped with order
+                    <button type="button" className="th-btn" onClick={() => sortBy("flip")}>
+                      flipped with order{arrow("flip")}
+                    </button>
                   </th>
-                  <th scope="col">answers</th>
+                  <th scope="col">
+                    <button type="button" className="th-btn" onClick={() => sortBy("answers")}>
+                      answers{arrow("answers")}
+                    </button>
+                  </th>
                   <th scope="col" title="Separate runs of this model by the same submitter, merged. Each is resampled as a unit.">
                     sessions
                   </th>
@@ -231,7 +347,18 @@ export default function ModePanel({
                           {m.run.label}
                         </Link>
                       </th>
-                      <td className="num">{m.overall.actRate === null ? "n/a" : `${Math.round(m.overall.actRate * 100)}%`}</td>
+                      <td className="num act-cell">
+                        {m.overall.actRate === null ? (
+                          "n/a"
+                        ) : (
+                          <>
+                            <span className="bar" aria-hidden="true">
+                              <i style={{ width: `${Math.round(m.overall.actRate * 100)}%` }} />
+                            </span>
+                            {Math.round(m.overall.actRate * 100)}%
+                          </>
+                        )}
+                      </td>
                       <td className="num">{`${Math.round(m.overall.refusalRate * 100)}%`}</td>
                       <td className={`num ${flip !== null && flip >= 0.4 ? "warn" : ""}`}>
                         {flip === null ? "n/a" : `${Math.round(flip * 100)}%`}
