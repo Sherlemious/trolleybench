@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { ModeGroup, RunSummary, SayDoModel, ScenarioGuide } from "../../lib/analysis";
+import type { ModeGroup, RunSummary, SayDoExample, SayDoModel, ScenarioGuide } from "../../lib/analysis";
 import ModePanel, { type PanelMeta } from "./ModePanel";
 import SayDo from "./SayDo";
 
@@ -16,6 +16,7 @@ export interface TabSection {
   groups: ModeGroup[];
   sayDo: SayDoModel[];
   scenarios: ScenarioGuide[];
+  sayDoExample: SayDoExample | null;
 }
 
 type View = "together" | "prompt" | "mcp_tool";
@@ -116,7 +117,7 @@ export default function ResultsTabs({
       {shown === "together" ? (
         <>
           <Together section={section} meta={meta} onOpen={(v) => go(section.pack, v)} />
-          <SayDo models={section.sayDo} scenarios={section.scenarios} />
+          <SayDo models={section.sayDo} scenarios={section.scenarios} example={section.sayDoExample} />
         </>
       ) : (
         section.groups
