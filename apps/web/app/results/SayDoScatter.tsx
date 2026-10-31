@@ -20,6 +20,10 @@ export interface ScatterPoint {
 
 /** Points within this many points of the diagonal count as "about the same". */
 const SAME = 0.05;
+/** Up to this many models, every dot is labelled and the summary is a sentence. */
+const LABEL_MAX = 8;
+/** From this many models, the summary is three counts. Below it, counts are mostly zeros. */
+const TILES_MIN = 10;
 
 /**
  * Asked against acting, one point per model measured both ways. The diagonal is "does
@@ -37,6 +41,7 @@ export default function SayDoScatter({ points, notBoth }: { points: ScatterPoint
   const less = points.filter((p) => p.x - p.y > SAME).length;
   const same = points.length - more - less;
   const focused = points.filter((p) => numberOf(p.key) > 0);
+  const labelled = points.length <= LABEL_MAX;
 
   return (
     <div className={`sdx${focus.length ? " has-focus" : ""}`}>
@@ -71,6 +76,18 @@ export default function SayDoScatter({ points, notBoth }: { points: ScatterPoint
             onClick={() => toggle(p.key)}
           />
         ))}
+        {labelled
+          ? points.map((p) => (
+              <span
+                key={`l${p.key}${p.askedId}`}
+                className={`sdx-label${p.x > 0.7 ? " left" : ""}`}
+                style={{ left: `${p.x * 100}%`, bottom: `${p.y * 100}%` }}
+                aria-hidden="true"
+              >
+                {displayName(p.label).name}
+              </span>
+            ))
+          : null}
         {focused.map((p) => (
           <Link
             key={`f${p.key}${p.askedId}`}
@@ -85,20 +102,24 @@ export default function SayDoScatter({ points, notBoth }: { points: ScatterPoint
         ))}
       </div>
       <div className="sdx-side">
-        <dl className="sdx-stats">
-          <div>
-            <dt>Act more when acting</dt>
-            <dd>{more}</dd>
-          </div>
-          <div>
-            <dt>About the same</dt>
-            <dd>{same}</dd>
-          </div>
-          <div>
-            <dt>Act less when acting</dt>
-            <dd>{less}</dd>
-          </div>
-        </dl>
+        {points.length >= TILES_MIN ? (
+          <dl className="sdx-stats">
+            <div>
+              <dt>Act more when acting</dt>
+              <dd>{more}</dd>
+            </div>
+            <div>
+              <dt>About the same</dt>
+              <dd>{same}</dd>
+            </div>
+            <div>
+              <dt>Act less when acting</dt>
+              <dd>{less}</dd>
+            </div>
+          </dl>
+        ) : (
+          <p className="sdx-sentence">{sentence(points)}</p>
+        )}
         <p>
           Each dot is one model measured both ways. On the dashed line, a model does what it says. &ldquo;About the same&rdquo; means within{" "}
           {Math.round(SAME * 100)} points. Click a dot to highlight that model everywhere on the page.
@@ -111,6 +132,29 @@ export default function SayDoScatter({ points, notBoth }: { points: ScatterPoint
       </div>
     </div>
   );
+}
+
+/** The small-number summary: who moved which way, in words, with the gap. */
+function sentence(points: ScatterPoint[]): string {
+  const gap = (p: ScatterPoint) => Math.round((p.y - p.x) * 100);
+  const name = (p: ScatterPoint) => `${displayName(p.label).name} (${gap(p) > 0 ? "+" : gap(p) < 0 ? "−" : "±"}${Math.abs(gap(p))} pts)`;
+  const groups: Array<[string, ScatterPoint[]]> = [
+    ["act less when they have tools than when asked", points.filter((p) => p.x - p.y > SAME)],
+    ["act more when they have tools than when asked", points.filter((p) => p.y - p.x > SAME)],
+    ["do about what they say, within 5 points", points.filter((p) => Math.abs(p.y - p.x) <= SAME)],
+  ];
+  const parts = groups.filter(([, g]) => g.length > 0);
+  if (points.length === 1) {
+    const [label] = parts[0]!;
+    return `${name(points[0]!)} ${label.replace(/^act/, "acts").replace(/^do /, "does ").replace("they have", "it has").replace("they say", "it says")}.`;
+  }
+  return parts
+    .map(([label, g], i) => {
+      const who = g.length === points.length ? (g.length === 2 ? "Both" : `All ${g.length}`) : `${g.length} of ${points.length}`;
+      return `${i === 0 ? who : who.toLowerCase()} ${label}: ${g.map(name).join(", ")}`;
+    })
+    .join("; ")
+    .concat(".");
 }
 
 function tip(p: ScatterPoint): string {

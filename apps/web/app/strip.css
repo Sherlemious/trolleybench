@@ -340,3 +340,8 @@
   .model-table td.mt-sub { min-width: 120px; }
 }
 .st-legend .lg-bin { width: 8px; height: 14px; border-radius: 2px 2px 0 0; background: color-mix(in oklab, var(--ink) 34%, var(--surface)); }
+
+/* Small-number scatter: name every dot, and say the result in a sentence. */
+.sdx-label { position: absolute; transform: translate(10px, 50%); font-size: 12.5px; font-weight: 600; color: var(--ink); white-space: nowrap; pointer-events: none; z-index: 2; text-shadow: 0 0 3px var(--surface), 0 0 3px var(--surface); }
+.sdx-label.left { transform: translate(calc(-100% - 10px), 50%); }
+.sdx-sentence { margin: 0 0 14px !important; font-size: 16px !important; font-weight: 500; line-height: 1.5 !important; color: var(--ink) !important; }
