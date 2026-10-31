@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { displayName, shortName } from "../lib/display";
 import { useFocus } from "./focus";
+import { SWARM_MAX } from "../lib/strips";
 
 /**
  * One scenario on one 0-100% axis: what people said, and where every model landed.
@@ -48,7 +49,6 @@ export interface StripHuman {
   href?: string | null;
 }
 
-const SWARM_MAX = 60;
 /** Half the swarm's height, in dot rows either side of the centre line. */
 const MAX_LEVEL = 3;
 /** Two dots closer than this (in % of the axis) cannot share a row. */
@@ -122,8 +122,25 @@ export default function ScenarioStrip({
           </div>
         ) : null}
 
-        {lanes.map((lane) => (
-          <Lane key={lane.id} lane={lane} band={bandEl} you={youEl} numberOf={numberOf} toggle={toggle} intervals={intervals} />
+        {lanes.map((lane, i) => (
+          <Lane
+            key={lane.id}
+            lane={lane}
+            band={bandEl}
+            you={
+              <>
+                {youEl}
+                {you && humans.length === 0 && i === 0 ? (
+                  <span className="st-you-tag" style={{ left: pc(you.value) }}>
+                    {you.label ?? "You"}
+                  </span>
+                ) : null}
+              </>
+            }
+            numberOf={numberOf}
+            toggle={toggle}
+            intervals={intervals}
+          />
         ))}
 
         <div className="st-row st-axis" aria-hidden="true">
@@ -175,7 +192,7 @@ function Lane({
       <span className="st-track">
         {band}
         {you}
-        {median !== null ? <span className="st-median" style={{ left: pc(median) }} aria-hidden="true" /> : null}
+        {median !== null && pts.length >= 3 ? <span className="st-median" style={{ left: pc(median) }} aria-hidden="true" /> : null}
         {histogram ? (
           <Histogram points={pts} />
         ) : (
@@ -203,7 +220,7 @@ function Lane({
           <span className="muted">not run</span>
         ) : (
           <>
-            <span className="st-med-label">median</span> {pct(median)}
+            {pts.length >= 3 ? <span className="st-med-label">median</span> : null} {pct(median)}
           </>
         )}
       </span>
@@ -308,3 +325,41 @@ function pc(v: number): string {
 function pct(v: number): string {
   return `${Math.round(v * 100)}%`;
 }
+
+const COMPANY_OF_SLOT: Record<number, string> = { 1: "Google", 2: "Anthropic", 3: "OpenAI", 4: "Alibaba", 5: "Mistral", 6: "DeepSeek", 7: "Meta", 8: "xAI", 9: "Other" };
+
+
+export function StripLegend({ companies, you, widest = 0 }: { companies: number[]; you?: boolean; widest?: number }) {
+  return (
+    <div className="st-legend" aria-label="Legend">
+      <span>
+        <i className="lg-human" /> published study
+      </span>
+      <span>
+        <i className="lg-band" /> range across studies
+      </span>
+      <span>
+        <i className="lg-med" /> model median
+      </span>
+      {you ? (
+        <span>
+          <i className="lg-you" /> you
+        </span>
+      ) : null}
+      {widest > SWARM_MAX ? (
+        <span>
+          <i className="lg-bin" /> models per 5-point bin · highlighted models numbered
+        </span>
+      ) : (
+      <span className="companies">
+        {companies.map((s) => (
+          <span key={s} className={`s${s}`}>
+            <i className="lg-dot" /> {COMPANY_OF_SLOT[s]}
+          </span>
+        ))}
+      </span>
+      )}
+    </div>
+  );
+}
+

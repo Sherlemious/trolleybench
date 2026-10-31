@@ -82,7 +82,7 @@ export default function ModelPicker({ models, label = "Highlight models" }: { mo
           aria-controls={listId}
           aria-autocomplete="list"
           aria-label={label}
-          placeholder={full ? `${MAX_FOCUS} highlighted: remove one to add another` : `${label}: search ${models.length} models`}
+          placeholder={full ? `${MAX_FOCUS} highlighted: remove one to add another` : `${label}: search ${models.length} model${models.length === 1 ? "" : "s"}`}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { UiInstance, UiTemplate, WorkbenchData } from "../lib/load";
 import { deriveScene, sceneKey } from "../lib/scene";
 import Scene, { type SceneRun } from "./Scene";
+import ScenarioStrip, { type StripLane } from "./ScenarioStrip";
+import { displayName, modelKey } from "../lib/display";
 
 const FRAMEWORK_LABEL: Record<string, string> = {
   none: "none",
@@ -95,18 +97,6 @@ export default function Workbench({ data }: { data: WorkbenchData }) {
     });
   }, []);
 
-  // Every model's answer per instance, in subject (colour-slot) order.
-  const byHash = useMemo(() => {
-    const m = new Map<string, Array<{ o: string; c: string | null; s: number }>>();
-    for (const r of data.results) {
-      const list = m.get(r.h) ?? [];
-      list.push({ o: r.o, c: r.c, s: r.s });
-      m.set(r.h, list);
-    }
-    for (const list of m.values()) list.sort((a, b) => a.s - b.s);
-    return m;
-  }, [data.results]);
-
   const instance: UiInstance | undefined = useMemo(
     () =>
       data.instances.find(
@@ -127,19 +117,12 @@ export default function Workbench({ data }: { data: WorkbenchData }) {
   // comparable: a model run only unsteered would otherwise be set against another
   // model's answers pooled over four arms.
   const tally = useMemo(() => {
-    const out = data.meta.subjects.map(() => ({ act: 0, omit: 0, refusal: 0, unparseable: 0, n: 0 }) as Record<string, number> & { n: number });
-    for (const inst of data.instances) {
-      if (inst.template_id !== template.id || inst.framework !== framework) continue;
-      for (const res of byHash.get(inst.hash) ?? []) {
-        const row = out[res.s];
-        if (row && res.o in row) {
-          row[res.o] = (row[res.o] ?? 0) + 1;
-          row.n += 1;
-        }
-      }
-    }
-    return out;
-  }, [data.instances, data.meta.subjects, byHash, template.id, framework]);
+    const row = data.tallies[`${template.id}|${framework}`] ?? [];
+    return data.meta.subjects.map((_, i) => {
+      const t = row[i] || [0, 0, 0, 0];
+      return { act: t[0], omit: t[1], refusal: t[2], unparseable: t[3], n: t[0] + t[1] + t[2] + t[3] } as Record<string, number> & { n: number };
+    });
+  }, [data.tallies, data.meta.subjects, template.id, framework]);
 
   const people = useMemo(
     () => data.baselines.filter((b) => b.templateId === template.id),
@@ -484,23 +467,40 @@ export default function Workbench({ data }: { data: WorkbenchData }) {
                 No model has been run yet. <a href="/run">Run one from your browser</a>.
               </p>
             ) : null}
-            <div className="barset">
-              {data.meta.subjects.map((subject, i) => {
+            {(() => {
+              const answered = data.meta.subjects.flatMap((subject, i) => {
                 const row = tally[i];
-                if (!row || row.n === 0) {
-                  return (
-                    <div className="barrow" key={subject.id}>
-                      <div className={`name s${subject.slot}`}>
-                        <a href={`/results/${encodeURIComponent(subject.id)}`}>{subject.label}</a>
-                      </div>
-                      <div className="bar-none">not asked under this framework</div>
-                    </div>
-                  );
-                }
+                return row && row.n > 0 ? [{ subject, row }] : [];
+              });
+              const missing = data.meta.subjects.length - answered.length;
+              const lane = (mode: string, label: string): StripLane => ({
+                id: mode,
+                label,
+                points: answered.flatMap(({ subject, row }) => {
+                  const valid = (row.act ?? 0) + (row.omit ?? 0);
+                  return subject.mode === mode && valid > 0
+                    ? [{ key: modelKey(subject.label), id: subject.id, label: subject.label, value: (row.act ?? 0) / valid, n: valid, interval: null, slot: subject.slot }]
+                    : [];
+                }),
+              });
+              const lanes = [lane("prompt", "Asked"), lane("mcp_tool", "Acting")].filter((l) => l.points.length > 0);
+              return (
+                <>
+                  {lanes.length > 0 ? <ScenarioStrip humans={[]} lanes={lanes} /> : null}
+                  {missing > 0 ? (
+                    <p className="field-note wb-missing">
+                      {missing} model{missing === 1 ? " was" : "s were"} not asked under this framework.
+                    </p>
+                  ) : null}
+                  {answered.length > 0 ? (
+                    <details className="method-notes wb-models">
+                      <summary>Every outcome, model by model ({answered.length})</summary>
+            <div className="barset">
+              {answered.map(({ subject, row }) => {
                 return (
                   <div className="barrow" key={subject.id}>
                     <div className={`name s${subject.slot}`}>
-                      <a href={`/results/${encodeURIComponent(subject.id)}`}>{subject.label}</a> n={row.n}
+                      <a href={`/results/${encodeURIComponent(subject.id)}`} title={subject.label}>{displayName(subject.label).name}</a> n={row.n}
                       {subject.mode === "mcp_tool" ? " · agent" : ""}
                     </div>
                     <div className="bar">
@@ -542,6 +542,11 @@ export default function Workbench({ data }: { data: WorkbenchData }) {
                 unparseable
               </span>
             </div>
+                    </details>
+                  ) : null}
+                </>
+              );
+            })()}
           </div>
         </section>
 

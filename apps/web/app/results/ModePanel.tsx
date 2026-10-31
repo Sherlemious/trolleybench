@@ -247,7 +247,7 @@ export default function ModePanel({
     <div className="mode-table">
       <div className="filters">
         <div className="f-bar">
-          <input type="search" placeholder={`Search ${rows.length} models`} value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search models by name" />
+          <input type="search" placeholder={`Search ${rows.length} model${rows.length === 1 ? "" : "s"}`} value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search models by name" />
           {rows.length > 1 ? FACETS.map(({ id, label }) => <FacetMenu key={id} label={label} options={facet(id)} picked={picked[id]} onPick={pick(id)} />) : null}
           <Menu label="Sort" value={sort} options={SORTS} onChange={setSort} />
         </div>

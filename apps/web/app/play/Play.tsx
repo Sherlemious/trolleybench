@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { PlayStep } from "../../lib/play";
+import { modelKey } from "../../lib/display";
+import type { PlayModel, PlayStep } from "../../lib/play";
 import { deriveScene, sceneKey } from "../../lib/scene";
 import Scene, { type SceneRun } from "../Scene";
+import ScenarioStrip, { type StripLane } from "../ScenarioStrip";
 
 const LETTERS = "AB";
 const STORE = "tb.play.v1";
@@ -148,70 +150,58 @@ export default function Play({ steps }: { steps: PlayStep[] }) {
   );
 }
 
+/** The step's models as strip lanes: asked and acting kept apart, never pooled. */
+function lanesOf(step: PlayStep): StripLane[] {
+  const pts = (list: PlayModel[]) =>
+    list.flatMap((m) =>
+      m.rate === null ? [] : [{ key: modelKey(m.label), id: m.id, label: m.label, value: m.rate, n: m.n, interval: m.interval, slot: m.slot }],
+    );
+  const lanes: StripLane[] = [{ id: "prompt", label: "Models asked", points: pts(step.models) }];
+  if (step.agents.length > 0) lanes.push({ id: "mcp_tool", label: "Agents acting", points: pts(step.agents) });
+  return lanes.filter((l) => l.points.length > 0);
+}
+
+function humansOf(step: PlayStep) {
+  return step.people
+    .filter((p) => p.value !== null)
+    .map((p, i) => ({ id: `${p.short}-${i}`, label: p.short, value: p.value as number, note: p.measure, href: p.href }));
+}
+
+/** How many models went the same way as you, most of the time. Refusals are counted apart. */
+function sidedWith(list: PlayModel[], mine: "act" | "omit") {
+  const rated = list.filter((m) => m.rate !== null);
+  const same = rated.filter((m) => (mine === "act" ? m.rate! > 0.5 : m.rate! < 0.5)).length;
+  return { same, of: rated.length, refused: list.length - rated.length };
+}
+
 function Reveal({ step, mine, actLabel }: { step: PlayStep; mine: "act" | "omit"; actLabel: string }) {
-  const numeric = step.people.filter((p) => p.value !== null);
+  const humans = humansOf(step);
+  const lanes = lanesOf(step);
+  const asked = sidedWith(step.models, mine);
+  const people = humans.length ? humans.filter((h) => (mine === "act" ? h.value > 0.5 : h.value < 0.5)).length : 0;
   return (
     <section className="reveal" aria-live="polite">
-      <h2>How others answered</h2>
+      <h2>You {mine === "act" ? "chose to act" : "chose not to act"}. Here is everyone else.</h2>
       <p className="reveal-key">
-        Bars show the share who chose <b>&ldquo;{actLabel.replace(/\.$/, "")}&rdquo;</b>. You{" "}
-        {mine === "act" ? "did" : "did not"}.
+        {humans.length > 0 ? (
+          <>
+            In {people} of {humans.length} published stud{humans.length === 1 ? "y" : "ies"}, most people went your way.{" "}
+          </>
+        ) : null}
+        {asked.of > 0 ? (
+          <>
+            {asked.same} of {asked.of} model{asked.of === 1 ? "" : "s"} usually did too.
+          </>
+        ) : null}
+        {asked.refused > 0 ? ` ${asked.refused} refused to answer.` : ""}
       </p>
-      <ul className="reveal-bars">
-        {numeric.map((p) => (
-          <li key={p.short}>
-            <span className="who">
-              {p.href ? (
-                <a href={p.href} target="_blank" rel="noreferrer">
-                  {p.short}
-                </a>
-              ) : (
-                p.short
-              )}
-              <span className="sub">people · {p.measure}</span>
-            </span>
-            <span className="track">
-              <span className="fill human" style={{ width: `${(p.value ?? 0) * 100}%` }} />
-            </span>
-            <span className="val">{Math.round((p.value ?? 0) * 100)}%</span>
-          </li>
-        ))}
-        {step.models.map((m) => (
-          <li key={m.label} className={`model s${m.slot}`}>
-            <span className="who">
-              <span className="mono">{m.label}</span>
-              <span className="sub">model · {m.n} answers</span>
-            </span>
-            <span className="track">
-              {m.rate !== null ? <span className="fill" style={{ width: `${m.rate * 100}%` }} /> : null}
-            </span>
-            <span className="val">{m.rate === null ? "refused" : `${Math.round(m.rate * 100)}%`}</span>
-          </li>
-        ))}
-      </ul>
-      {step.agents.length > 0 ? (
-        <>
-          <h3 className="reveal-sub">Agents placed in the situation</h3>
-          <p className="reveal-subnote">
-            These acted through tools rather than answering a question, a different measurement, so
-            they are shown apart.
-          </p>
-          <ul className="reveal-bars">
-            {step.agents.map((m) => (
-              <li key={m.label} className={`model s${m.slot}`}>
-                <span className="who">
-                  <span className="mono">{m.label}</span>
-                  <span className="sub">agent · {m.n} actions</span>
-                </span>
-                <span className="track">
-                  {m.rate !== null ? <span className="fill" style={{ width: `${m.rate * 100}%` }} /> : null}
-                </span>
-                <span className="val">{m.rate === null ? "declined" : `${Math.round(m.rate * 100)}%`}</span>
-              </li>
-            ))}
-          </ul>
-        </>
+      {lanes.length > 0 || humans.length > 0 ? (
+        <ScenarioStrip humans={humans} lanes={lanes} you={{ value: mine === "act" ? 1 : 0 }} intervals={false} />
       ) : null}
+      <p className="reveal-scale">
+        Each position is the share who chose &ldquo;{actLabel.replace(/\.$/, "")}&rdquo;. Agents acted through tools rather
+        than answering, so they get their own row. Hover any mark to see which models it is.
+      </p>
       {step.people
         .filter((p) => p.finding)
         .map((p) => (
@@ -220,8 +210,8 @@ function Reveal({ step, mine, actLabel }: { step: PlayStep; mine: "act" | "omit"
           </p>
         ))}
       <p className="reveal-note">
-        Studies worded the question differently from each other and from this page, so read these as
-        direction, not distance. <Link href="/sources">Sources and exact quotes</Link>.
+        Studies worded the question differently from each other and from this page, so read these as direction, not distance.{" "}
+        <Link href="/sources">Sources and exact quotes</Link>.
       </p>
     </section>
   );
@@ -264,32 +254,23 @@ function Summary({
         </p>
       </header>
 
-      <ul className="summary">
+      <ol className="summary">
         {rows.map(({ s, i, mine, lo, hi, majority }) => (
           <li key={s.key}>
-            <button type="button" className="summary-title" onClick={() => onJump(i)}>
-              {i + 1}. {s.title}
-            </button>
-            <span className={`you ${mine ?? "none"}`}>{mine === "act" ? "you acted" : mine === "omit" ? "you did not act" : "not answered"}</span>
-            <span className="people">
-              {lo === null ? "people: see finding" : lo === hi ? `people: ${Math.round(lo * 100)}% acted` : `people: ${Math.round(lo! * 100)}–${Math.round(hi! * 100)}% acted`}
-              {majority === "split" ? " · split" : ""}
-            </span>
-            <span className="models">
-              {s.models.map((m) => (
-                <span key={m.label} className={`chip s${m.slot}`}>
-                  {m.label}: {m.rate === null ? "refused" : `${Math.round(m.rate * 100)}%`}
-                </span>
-              ))}
-              {s.agents.map((m) => (
-                <span key={`a-${m.label}`} className={`chip s${m.slot}`}>
-                  {m.label} (agent): {m.rate === null ? "declined" : `${Math.round(m.rate * 100)}%`}
-                </span>
-              ))}
-            </span>
+            <div className="summary-top">
+              <span className={`you ${mine ?? "none"}`}>{mine === "act" ? "You acted" : mine === "omit" ? "You did not act" : "Not answered"}</span>
+              <button type="button" className="summary-title" onClick={() => onJump(i)}>
+                {i + 1}. {s.title}
+              </button>
+              <span className="people">
+                {lo === null ? "People: see the finding" : lo === hi ? `People: ${Math.round(lo * 100)}% acted` : `People: ${Math.round(lo! * 100)}–${Math.round(hi! * 100)}% acted`}
+                {majority === "split" ? " · split" : ""}
+              </span>
+            </div>
+            <ScenarioStrip humans={humansOf(s)} lanes={lanesOf(s)} you={mine ? { value: mine === "act" ? 1 : 0 } : null} intervals={false} />
           </li>
         ))}
-      </ul>
+      </ol>
 
       <div className="summary-cta">
         <Link className="primary" href="/results">

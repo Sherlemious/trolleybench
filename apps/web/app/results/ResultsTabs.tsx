@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type { Comparison, ModeGroup, RunSummary, SayDoExample, SayDoModel, ScenarioGuide } from "../../lib/analysis";
+import type { ModeGroup, RunSummary, SayDoExample, SayDoModel, ScenarioGuide } from "../../lib/analysis";
 import { displayName, modelKey, shortChannel } from "../../lib/display";
 import { MEASURE_LABEL } from "../../lib/measure";
 import { FocusProvider, useFocus } from "../focus";
 import ModelPicker, { type PickerModel } from "../ModelPicker";
-import ScenarioStrip, { type StripLane, type StripPoint } from "../ScenarioStrip";
+import ScenarioStrip, { StripLegend } from "../ScenarioStrip";
+import { companiesIn, stripsFor, widestLane } from "../../lib/strips";
 import ModePanel, { type PanelMeta } from "./ModePanel";
 import SayDo from "./SayDo";
 import SayDoScatter, { type ScatterPoint } from "./SayDoScatter";
@@ -87,9 +88,11 @@ export default function ResultsTabs({ sections, meta }: { sections: TabSection[]
           <p>{section.body}</p>
         </header>
 
-        <div className="focus-bar">
-          <ModelPicker models={pickerModels(section, meta)} />
-        </div>
+        {pickerModels(section, meta).length > 1 ? (
+          <div className="focus-bar">
+            <ModelPicker models={pickerModels(section, meta)} />
+          </div>
+        ) : null}
 
         <Guide scenarios={section.scenarios} />
         <PeopleAndModels section={section} />
@@ -141,37 +144,6 @@ function Guide({ scenarios }: { scenarios: ScenarioGuide[] }) {
   );
 }
 
-function pointOf(run: RunSummary["run"], rate: { actRate: number | null; interval: [number, number] | null; nValid: number } | null): StripPoint[] {
-  if (!rate || rate.actRate === null) return [];
-  return [{ key: modelKey(run.label), id: run.id, label: run.label, value: rate.actRate, n: rate.nValid, interval: rate.interval, slot: run.slot }];
-}
-
-/** Every scenario of the pack with a published human baseline, as one strip each. */
-export function stripsFor(groups: ModeGroup[]): Array<{ id: string; title: string; cells: string; humans: Comparison["baselines"]; lanes: StripLane[] }> {
-  const ids: string[] = [];
-  for (const g of groups) for (const c of g.comparisons) if (!ids.includes(c.templateId)) ids.push(c.templateId);
-  return ids.map((id) => {
-    const per = groups.flatMap((g) => {
-      const c = g.comparisons.find((x) => x.templateId === id);
-      return c ? [{ mode: g.mode, c }] : [];
-    });
-    const first = per[0]!.c;
-    const levels: string[] = [];
-    for (const { c } of per) for (const m of c.models) for (const l of m.byLevel) if (!levels.includes(l.level)) levels.push(l.level);
-    const lanes: StripLane[] =
-      levels.length > 0
-        ? levels.flatMap((level) =>
-            per.map(({ mode, c }) => ({
-              id: `${mode}-${level}`,
-              label: `${MODE_LABEL[mode] ?? mode} · ${level}`,
-              points: c.models.flatMap((m) => pointOf(m.run, m.byLevel.find((l) => l.level === level)?.rate ?? null)),
-            })),
-          )
-        : per.map(({ mode, c }) => ({ id: mode, label: MODE_LABEL[mode] ?? mode, points: c.models.flatMap((m) => pointOf(m.run, m.rate)) }));
-    return { id, title: first.title, cells: first.cells, humans: first.baselines, lanes };
-  });
-}
-
 /** People beside models, one compact strip per scenario. Only for packs with human baselines. */
 function PeopleAndModels({ section }: { section: TabSection }) {
   const strips = stripsFor(section.groups);
@@ -190,7 +162,7 @@ function PeopleAndModels({ section }: { section: TabSection }) {
           The shaded band spans what people said across published studies. Each dot is a model; where models and people part
           ways is the finding.
         </p>
-        <StripLegend companies={companies} />
+        <StripLegend companies={companies} widest={widestLane(strips)} />
         {strips.map((s) => {
           const humans = s.humans
             .filter((b) => b.value !== null)
@@ -223,40 +195,6 @@ function PeopleAndModels({ section }: { section: TabSection }) {
         </details>
       </div>
     </section>
-  );
-}
-
-const COMPANY_OF_SLOT: Record<number, string> = { 1: "Google", 2: "Anthropic", 3: "OpenAI", 4: "Alibaba", 5: "Mistral", 6: "DeepSeek", 7: "Meta", 8: "xAI", 9: "Other" };
-
-function companiesIn(groups: ModeGroup[]): number[] {
-  return [...new Set(groups.flatMap((g) => g.models.map((m) => m.run.slot)))].filter((s) => s > 0).sort((a, b) => a - b);
-}
-
-export function StripLegend({ companies, you }: { companies: number[]; you?: boolean }) {
-  return (
-    <div className="st-legend" aria-label="Legend">
-      <span>
-        <i className="lg-human" /> published study
-      </span>
-      <span>
-        <i className="lg-band" /> range across studies
-      </span>
-      <span>
-        <i className="lg-med" /> model median
-      </span>
-      {you ? (
-        <span>
-          <i className="lg-you" /> you
-        </span>
-      ) : null}
-      <span className="companies">
-        {companies.map((s) => (
-          <span key={s} className={`s${s}`}>
-            <i className="lg-dot" /> {COMPANY_OF_SLOT[s]}
-          </span>
-        ))}
-      </span>
-    </div>
   );
 }
 

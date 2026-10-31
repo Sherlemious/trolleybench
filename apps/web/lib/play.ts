@@ -18,9 +18,12 @@ export interface PlayPerson {
 }
 
 export interface PlayModel {
+  /** The model entry's id, for the link to its run page. */
+  id: string;
   label: string;
   slot: number;
   rate: number | null;
+  interval: [number, number] | null;
   n: number;
 }
 
@@ -102,7 +105,7 @@ export async function loadPlayData(): Promise<{ steps: PlayStep[]; hasModels: bo
         // The trapdoor step is one level of a factor, so read the model at that level.
         const level = m.byLevel.find((l) => l.level === t.cell["mechanism_variant"]);
         const rate = level ? level.rate : m.rate;
-        return { label: m.run.label, slot: m.run.slot, rate: rate?.actRate ?? null, n: rate?.nValid ?? 0 };
+        return { id: m.run.id, label: m.run.label, slot: m.run.slot, rate: rate?.actRate ?? null, interval: rate?.interval ?? null, n: rate?.nValid ?? 0 };
       });
     const models = toPlay(comparison?.models ?? []);
     const agents = toPlay(agentGroup?.comparisons.find((c) => c.templateId === t.template)?.models ?? []);

@@ -18,7 +18,7 @@
 }
 .st-label { display: flex; flex-direction: column; font-size: 13.5px; font-weight: 600; color: var(--ink); line-height: 1.3; }
 .st-n { font-size: 12px; font-weight: 400; color: var(--slate); }
-.st-sum { font-size: 14px; font-weight: 600; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+.st-sum { font-size: 14px; font-weight: 600; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .st-med-label { font-size: 12px; font-weight: 400; color: var(--slate); }
 
 .st-track {
@@ -159,7 +159,7 @@
 .st-bin[data-tip]:hover::after, .st-bin[data-tip]:focus-visible::after { bottom: calc(100% + 6px); }
 
 @media (max-width: 640px) {
-  .st-row { grid-template-columns: minmax(0, 1fr) 72px; grid-template-areas: "label sum" "track track"; gap: 2px 10px; }
+  .st-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label sum" "track track"; gap: 2px 10px; }
   .st-label { grid-area: label; flex-direction: row; align-items: baseline; gap: 8px; }
   .st-sum { grid-area: sum; }
   .st-track { grid-area: track; }
@@ -339,3 +339,4 @@
   .filters .f-bar input[type="search"] { flex-basis: 100%; max-width: none; }
   .model-table td.mt-sub { min-width: 120px; }
 }
+.st-legend .lg-bin { width: 8px; height: 14px; border-radius: 2px 2px 0 0; background: color-mix(in oklab, var(--ink) 34%, var(--surface)); }

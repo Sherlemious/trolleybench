@@ -58,9 +58,16 @@ export interface UiRate {
 
 export type UiSourcedBaseline = UiBaseline & { short: string; href: string | null; viaShort: string | null };
 
+/**
+ * What a chart needs to name a model and link to it. Comparisons repeat the model for
+ * every scenario and level, so they carry this rather than the whole RunInfo: with 200
+ * models the full record, repeated, was most of the results page's weight.
+ */
+export type RunRef = Pick<RunInfo, "id" | "label" | "slot">;
+
 /** One model's answers on the cells a scenario's human studies asked about. */
 export interface ModelOnScenario {
-  run: RunInfo;
+  run: RunRef;
   rate: UiRate | null;
   /** For a qualitative baseline: the model per level of the contrasted factor. */
   byLevel: Array<{ level: string; rate: UiRate }>;
@@ -296,7 +303,8 @@ async function modelOnScenario(
       }
     }
   }
-  return { run: p.source.info, rate: whole ? toRate(whole) : null, byLevel };
+  const { id, label, slot } = p.source.info;
+  return { run: { id, label, slot }, rate: whole ? toRate(whole) : null, byLevel };
 }
 
 async function comparisonsFor(prepared: Prepared[]): Promise<Comparison[]> {

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { ResultsData } from "../../lib/analysis";
 import { via } from "../../lib/runs";
+import { displayName } from "../../lib/display";
+import { modelMeta } from "../../lib/family";
+import RunSwitcher from "./RunSwitcher";
 import Compare from "../Compare";
 import Forest from "../Forest";
 import Grid from "../Grid";
@@ -31,39 +34,29 @@ export default function ResultsView({ data }: { data: ResultsData }) {
     <main className="wrap">
       <SiteNav current="results" />
 
-      <header className="page-head">
+      <RunSwitcher
+        current={run.id}
+        entries={data.runs.map((r) => ({
+          id: r.id,
+          label: r.label,
+          company: modelMeta(r.label).company,
+          slot: r.slot,
+          isStub: r.isStub,
+          tag: [r.mode === "mcp_tool" ? "acting" : "asked", r.pack !== "classic" ? r.pack : null].filter(Boolean).join(" · "),
+        }))}
+      />
+
+      <header className="page-head run-head">
         <div>
-          <p className="eyebrow">Results · {run.suite ?? "ad hoc design"} · from {run.source === "database" ? "the database" : "committed files"}</p>
-          <h1>
-            {run.isStub ? "Pipeline check: the echo test double" : run.label}
-          </h1>
-          <p className="lede">
-            Every figure is recomputed at build time from the committed run, through the same
-            analysis code <code>trolley analyze</code> calls, so a number here and a number in your
-            terminal cannot drift apart.
+          <p className="eyebrow">
+            {run.mode === "mcp_tool" ? "Acting" : "Asked"} · {run.pack === "classic" ? "trolley canon" : run.pack} · {run.suite ?? "ad hoc design"}
+          </p>
+          <h1>{run.isStub ? "Pipeline check: the echo test double" : displayName(run.label).name}</h1>
+          <p className="run-raw">
+            {displayName(run.label).channel ? <span className="tag">{displayName(run.label).channel}</span> : null}
+            <code>{run.label}</code>
           </p>
         </div>
-        <nav className="runs" aria-label="Choose a run">
-          <Link href="/results" className="all">← all models</Link>
-          <span className="runs-label">run</span>
-          {data.runs.map((r) => (
-            <Link
-              key={r.id}
-              href={`/results/${encodeURIComponent(r.id)}`}
-              aria-current={r.id === run.id || r.sessionIds.includes(run.id) ? "page" : undefined}
-              className={r.isStub ? "stub" : undefined}
-            >
-              {r.label}
-              {r.isStub ? <span className="tag">test double</span> : null}
-              {/* The same model can appear once per mode and per pack; say which this is. */}
-              {!r.isStub && (r.mode === "mcp_tool" || r.pack !== "classic") ? (
-                <span className="tag">
-                  {[r.mode === "mcp_tool" ? "acting" : null, r.pack !== "classic" ? r.pack : null].filter(Boolean).join(" · ")}
-                </span>
-              ) : null}
-            </Link>
-          ))}
-        </nav>
       </header>
 
       {run.isStub ? (
@@ -76,7 +69,8 @@ export default function ResultsView({ data }: { data: ResultsData }) {
           </span>
         </p>
       ) : (
-        <p className="notice info">
+        <details className="notice info about-run">
+          <summary>
           <strong>
             {run.mode === "mcp_tool"
               ? run.origin === "agent"
@@ -85,9 +79,11 @@ export default function ResultsView({ data }: { data: ResultsData }) {
               : run.selfReported
                 ? "Self-reported run."
                 : "Maintainer run."}
-          </strong>
+          </strong>{" "}
+          <span className="about-more">How this run was taken</span>
+          </summary>
           <span>
-            {run.label} answered {o.total} of {run.planned} cells
+            {displayName(run.label).name} answered {o.total} of {run.planned} cells
             {run.sessionIds.length > 1 ? ` across ${run.sessionIds.length} sessions` : ""}
             {run.finishedAt ? `, finishing ${run.finishedAt.slice(0, 10)}` : ", and the run is still in progress"}.{" "}
             {run.origin === "agent"
@@ -102,7 +98,7 @@ export default function ResultsView({ data }: { data: ResultsData }) {
               ? "Each session is resampled as a unit, so the effect intervals below measure how much this model varies from one session to the next."
               : "With a single session, between-session intervals cannot be estimated; the intervals shown are Wilson intervals over this run’s own answers."}
           </span>
-        </p>
+        </details>
       )}
 
       <section className="sessions-strip" aria-label="Sessions">
@@ -166,15 +162,21 @@ export default function ResultsView({ data }: { data: ResultsData }) {
 
       <section className="panel">
         <div className="panel-head">
-          <h2>Act rate by scenario and framework</h2>
+          <h2>{data.grid.frameworks.length > 1 ? "Act rate by scenario and framework" : "Act rate by scenario"}</h2>
           <span className="hint">all ratios · both option orders</span>
         </div>
         <div className="panel-body">
           <Grid grid={data.grid} />
           <p className="foot-note">
-            Each framework arm puts that framework in the system prompt; <em>no framework</em> is the
-            unsteered baseline. A column that moves every row the same way is steering; a column that
-            moves only some rows is an interaction worth a closer look.
+            {data.grid.frameworks.length > 1 ? (
+              <>
+                Each framework arm puts that framework in the system prompt; <em>no framework</em> is the unsteered baseline. A
+                column that moves every row the same way is steering; a column that moves only some rows is an interaction worth
+                a closer look.
+              </>
+            ) : (
+              <>Only the unsteered arm was run, so there is no framework effect to show. A full run adds three framings.</>
+            )}
           </p>
         </div>
       </section>
@@ -217,6 +219,7 @@ export default function ResultsView({ data }: { data: ResultsData }) {
         </div>
       </section>
 
+      {data.amces.some((a) => !a.unavailable && a.levels.length > 1) ? (
       <section className="panel">
         <div className="panel-head">
           <h2>Average marginal component effects</h2>
@@ -226,7 +229,17 @@ export default function ResultsView({ data }: { data: ResultsData }) {
           <Forest data={data} />
         </div>
       </section>
+      ) : (
+        <p className="panel-skip">
+          <strong>Effects:</strong> no design factor varies in this run, so there is no effect to estimate.
+        </p>
+      )}
 
+      {data.refusalByTemplate.every((t) => t.refusalRate === 0) ? (
+        <p className="panel-skip">
+          <strong>Refusals:</strong> none, in any scenario.
+        </p>
+      ) : (
       <section className="panel">
         <div className="panel-head">
           <h2>Where refusal concentrates</h2>
@@ -254,8 +267,9 @@ export default function ResultsView({ data }: { data: ResultsData }) {
           </p>
         </div>
       </section>
+      )}
 
-      <footer className="foot">
+      <footer className="foot run-foot">
         <span>
           run <code>{run.id}</code>
           {` · trolley ${run.toolVersion}`}
