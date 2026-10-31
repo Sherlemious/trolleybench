@@ -40,7 +40,7 @@ export default function Grid({ grid }: { grid: ResultsData["grid"] }) {
             <tr key={t.id}>
               <th scope="row">
                 <span className="t">{t.title}</span>
-                <code>{t.id}</code>
+                {t.summary ? <span className="sum">{t.summary}</span> : <code>{t.id}</code>}
               </th>
               {grid.frameworks.map((f) => {
                 const cell = grid.cells[`${t.id}|${f}`];

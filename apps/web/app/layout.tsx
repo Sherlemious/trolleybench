@@ -5,6 +5,7 @@ import "./scene.css";
 import "./results.css";
 import "./site.css";
 import "./pages.css";
+import "./scroll.css";
 
 export const metadata: Metadata = {
   title: "trolleybench",

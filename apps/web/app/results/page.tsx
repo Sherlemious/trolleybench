@@ -18,7 +18,7 @@ export const metadata = {
 };
 
 /** How each pack is introduced. A pack without an entry is shown by its id. */
-const PACK_COPY: Record<string, Omit<TabSection, "pack" | "groups" | "sayDo">> = {
+const PACK_COPY: Record<string, Omit<TabSection, "pack" | "groups" | "sayDo" | "scenarios">> = {
   classic: {
     tab: "Trolley canon",
     title: "The canonical trolley dilemmas",
@@ -60,13 +60,14 @@ export default async function ResultsOverview() {
   const data = await loadOverview();
 
   const sections: TabSection[] = [
-    ...(data.groups.length > 0 ? [{ pack: "classic", groups: data.groups, sayDo: [] }] : []),
+    ...(data.groups.length > 0 ? [{ pack: "classic", groups: data.groups, sayDo: [], scenarios: data.classicScenarios }] : []),
     ...data.packs,
   ].map((s) => ({
     ...(PACK_COPY[s.pack] ?? { tab: s.pack, title: s.pack, body: "", modes: {} }),
     pack: s.pack,
     groups: s.groups,
     sayDo: s.sayDo,
+    scenarios: s.scenarios,
   }));
   const meta = Object.fromEntries(
     sections.flatMap((s) => s.groups.flatMap((g) => g.models.map((m) => [m.run.id, { ...modelMeta(m.run.label), via: via(m.run) }]))),

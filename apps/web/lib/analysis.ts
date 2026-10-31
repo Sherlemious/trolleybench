@@ -105,7 +105,7 @@ export interface ResultsData {
   refusalByTemplate: { group: string; title: string; refusalRate: number; n: number }[];
   comparisons: Comparison[];
   grid: {
-    templates: Array<{ id: string; title: string }>;
+    templates: Array<{ id: string; title: string; summary?: string }>;
     frameworks: string[];
     cells: Record<string, UiRate>;
   };
@@ -147,11 +147,20 @@ export interface SayDoModel {
   templates: SayDoTemplate[];
 }
 
+/** A scenario as the results page introduces it. */
+export interface ScenarioGuide {
+  id: string;
+  title: string;
+  summary: string | null;
+}
+
 /** Every finished run of one scenario pack, by mode, plus its say/do pairs. */
 export interface PackSection {
   pack: string;
   groups: ModeGroup[];
   sayDo: SayDoModel[];
+  /** The pack's scenarios in pack order, for the guide and for labelling rows. */
+  scenarios: ScenarioGuide[];
 }
 
 export interface OverviewData {
@@ -160,6 +169,8 @@ export interface OverviewData {
   groups: ModeGroup[];
   /** Every other pack, each kept apart from the canon and from each other. */
   packs: PackSection[];
+  /** The canon's scenarios, for its guide. */
+  classicScenarios: ScenarioGuide[];
   stubs: RunInfo[];
   inProgress: RunInfo[];
   dataSource: "database" | "file" | "mixed" | "none";
@@ -295,7 +306,7 @@ export async function loadResultsData(idOrStem?: string): Promise<ResultsData> {
 
   // Templates in pack order, frameworks in design order. Neither is ever re-sorted by a
   // result: invariant 3 forbids a ranked view of levels.
-  const templates = (await templatesOnce()).map((t) => ({ id: t.id, title: t.title }));
+  const templates = (await templatesOnce()).map((t) => ({ id: t.id, title: t.title, ...(t.summary && { summary: t.summary }) }));
   const frameworks = [...new Set([...instances.values()].map((i) => i.variation.moral_framework))];
   const order = ["none", "act_utilitarian", "rule_utilitarian", "kantian_deontological", "virtue_ethics", "contractualist"];
   frameworks.sort((a, b) => rank(order, a) - rank(order, b));
@@ -374,7 +385,12 @@ export async function loadOverview(): Promise<OverviewData> {
   for (const pack of others) {
     const { groups, prepared } = await byPack(pack);
     if (groups.length === 0) continue;
-    packs.push({ pack, groups, sayDo: await sayDoFor(prepared.get("prompt") ?? [], prepared.get("mcp_tool") ?? []) });
+    packs.push({
+      pack,
+      groups,
+      sayDo: await sayDoFor(prepared.get("prompt") ?? [], prepared.get("mcp_tool") ?? []),
+      scenarios: await scenariosOf(pack),
+    });
   }
 
   const sources = new Set(runs.map((r) => r.source));
@@ -382,10 +398,20 @@ export async function loadOverview(): Promise<OverviewData> {
     runs,
     groups: classic.groups,
     packs,
+    classicScenarios: await scenariosOf("classic"),
     stubs: runs.filter((r) => r.isStub),
     inProgress: sessions.filter((r) => !r.isStub && !r.complete),
     dataSource: sources.size === 0 ? "none" : sources.size > 1 ? "mixed" : [...sources][0]!,
   };
+}
+
+async function scenariosOf(pack: string): Promise<ScenarioGuide[]> {
+  const packs = await packsOnce();
+  return (packs.find((lp) => lp.pack.id === pack)?.pack.templates ?? []).map((t) => ({
+    id: t.id,
+    title: t.title,
+    summary: t.summary ?? null,
+  }));
 }
 
 /**

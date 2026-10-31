@@ -1,0 +1,134 @@
+/* Scrollbars, drawn as rails.
+
+   The page scrollbar is a short length of track: two hairline rails with faint
+   sleepers between them, and the thumb is the car riding on it - slate at rest,
+   the accent on hover, ink while dragged. Inner scrollers (tables, heat maps, code)
+   get a slimmer rail that only darkens when the pointer is over it, and fading edge
+   shadows that say "there is more this way" before anyone has to discover it.
+
+   Two engines, two dialects. Chromium honours the standard `scrollbar-color` and,
+   when it is set, ignores every ::-webkit-scrollbar rule - so the standard
+   properties are applied only where the WebKit pseudo-elements do not exist
+   (Firefox), and WebKit/Blink keep the richer drawing below. Forced-colors mode
+   keeps the system scrollbar: it is the one the user's contrast theme styles. */
+
+:root {
+  --rail: color-mix(in srgb, var(--slate) 22%, transparent);
+  --sleeper: color-mix(in srgb, var(--slate) 10%, transparent);
+  --car: color-mix(in srgb, var(--slate) 62%, var(--paper));
+  --car-hover: var(--accent);
+  --car-active: var(--ink);
+  --scroll-shade: rgba(16, 22, 28, 0.16);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --car: color-mix(in srgb, var(--slate) 55%, var(--paper));
+    --scroll-shade: rgba(0, 0, 0, 0.55);
+  }
+}
+:root[data-theme="dark"] {
+  --car: color-mix(in srgb, var(--slate) 55%, var(--paper));
+  --scroll-shade: rgba(0, 0, 0, 0.55);
+}
+
+/* Reserve the gutter: the results tabs swap a short view for a long one, and a
+   scrollbar appearing mid-click would shove the whole page sideways. */
+html { scrollbar-gutter: stable; }
+
+@media not (forced-colors: active) {
+  /* ---- Firefox: the standard, thin and tinted ---------------------------- */
+  @supports not selector(::-webkit-scrollbar) {
+    html { scrollbar-color: var(--car) transparent; }
+    * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--slate) 45%, transparent) transparent; }
+    *:hover { scrollbar-color: var(--car-hover) transparent; }
+  }
+
+  /* ---- WebKit / Blink: the page scrollbar is a length of track ---------- */
+  html::-webkit-scrollbar { width: 14px; height: 14px; }
+  html::-webkit-scrollbar-track {
+    background:
+      /* the two rails */
+      linear-gradient(to right, transparent 4px, var(--rail) 4px, var(--rail) 5px, transparent 5px,
+        transparent 9px, var(--rail) 9px, var(--rail) 10px, transparent 10px),
+      /* sleepers, one every 18px */
+      repeating-linear-gradient(to bottom, transparent 0 15px, var(--sleeper) 15px 18px);
+    background-color: var(--paper);
+    border-left: 1px solid var(--line-soft);
+  }
+  html::-webkit-scrollbar-thumb {
+    /* The car: a rounded body inset from the rails by a paper-coloured border. */
+    background: var(--car);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+    border-radius: 999px;
+    min-height: 48px;
+  }
+  html::-webkit-scrollbar-thumb:hover { background: var(--car-hover); background-clip: padding-box; }
+  html::-webkit-scrollbar-thumb:active { background: var(--car-active); background-clip: padding-box; }
+  html::-webkit-scrollbar-corner { background: var(--paper); }
+
+  /* ---- Inner scrollers: a slim rail, quiet until it is needed ----------- */
+  body ::-webkit-scrollbar { width: 8px; height: 8px; }
+  body ::-webkit-scrollbar-track {
+    background: linear-gradient(var(--line-soft), var(--line-soft)) center / 100% 2px no-repeat;
+    border-radius: 999px;
+  }
+  body ::-webkit-scrollbar-track:vertical {
+    background: linear-gradient(var(--line-soft), var(--line-soft)) center / 2px 100% no-repeat;
+  }
+  body ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--slate) 40%, transparent);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: 999px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+  body *:hover::-webkit-scrollbar-thumb { background: var(--car); background-clip: padding-box; }
+  body ::-webkit-scrollbar-thumb:hover { background: var(--car-hover); background-clip: padding-box; }
+  body ::-webkit-scrollbar-thumb:active { background: var(--car-active); background-clip: padding-box; }
+  body ::-webkit-scrollbar-corner { background: transparent; }
+  body ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+}
+
+/* ---- Overflow hints for horizontal scrollers ----------------------------
+   The classic local/scroll background pair: a surface-coloured cover scrolls with
+   the content and hides a shadow pinned to each edge, so a shadow shows only on the
+   side where content is cut off. Pure CSS, no listeners, and nothing at all when
+   the content fits. Wrappers sit on panel surfaces, hence --surface. */
+.model-table-wrap,
+.heat-wrap,
+.mx-wrap,
+.api-table-wrap,
+.matrix-scroll,
+.code pre {
+  background:
+    linear-gradient(to right, var(--surface) 40%, transparent) left center / 32px 100% no-repeat local,
+    linear-gradient(to left, var(--surface) 40%, transparent) right center / 32px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, var(--scroll-shade), transparent) left center / 12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--scroll-shade), transparent) right center / 12px 100% no-repeat scroll;
+  background-color: var(--surface);
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  padding-bottom: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .model-table-wrap, .heat-wrap, .mx-wrap, .api-table-wrap, .matrix-scroll, .code pre { scroll-behavior: auto; }
+}
+
+/* Heat tables keep their row labels in view while the numbers scroll under them;
+   otherwise a scrolled table on a phone is a grid of percentages with no names. */
+table.heat thead th:first-child,
+table.heat tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface);
+  box-shadow: 6px 0 8px -6px var(--scroll-shade);
+}
+@media (max-width: 640px) {
+  table.heat thead th:first-child,
+  table.heat tbody th { min-width: 0; width: 132px; max-width: 132px; white-space: normal; padding-right: 8px; }
+  table.heat tbody th .t { font-size: 12.5px; line-height: 1.3; }
+  .sd-act { font-size: 10.5px; }
+}

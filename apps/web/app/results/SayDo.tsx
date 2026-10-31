@@ -1,5 +1,16 @@
 import Link from "next/link";
-import type { SayDoModel } from "../../lib/analysis";
+import type { SayDoModel, ScenarioGuide } from "../../lib/analysis";
+
+function numberOf(scenarios: ScenarioGuide[], id: string): string {
+  const i = scenarios.findIndex((s) => s.id === id);
+  return i < 0 ? "" : String(i + 1).padStart(2, "0");
+}
+
+/** The "Acting means ..." sentence from a summary, so each row says what its numbers count. */
+function actMeaning(scenarios: ScenarioGuide[], id: string): string {
+  const summary = scenarios.find((s) => s.id === id)?.summary ?? "";
+  return /Acting means ([^.]+)\./.exec(summary)?.[1] ?? "";
+}
 
 function pct(n: number, d: number): string {
   return d === 0 ? "n/a" : `${Math.round((n / d) * 100)}%`;
@@ -31,7 +42,7 @@ function Cell({ n, d, title }: { n: number; d: number; title: string }) {
  * was carried out - calling the acting tool with a refusal in place of its content is
  * shown separately as hollow, not as acting.
  */
-export default function SayDo({ models }: { models: SayDoModel[] }) {
+export default function SayDo({ models, scenarios = [] }: { models: SayDoModel[]; scenarios?: ScenarioGuide[] }) {
   if (models.length === 0) return null;
   return (
     <section className="panel">
@@ -95,9 +106,12 @@ export default function SayDo({ models }: { models: SayDoModel[] }) {
             <tbody>
               {models[0]!.templates.map((t) => (
                 <tr key={t.templateId}>
-                  <th scope="row">
-                    <span className="t">{t.title}</span>
-                    <code>{t.templateId}</code>
+                  <th scope="row" title={scenarios.find((s) => s.id === t.templateId)?.summary ?? undefined}>
+                    <a className="t sd-row" href={`#scenario-${t.templateId}`}>
+                      {numberOf(scenarios, t.templateId) ? <span className="sd-no">{numberOf(scenarios, t.templateId)}</span> : null}
+                      {t.title}
+                    </a>
+                    <span className="sd-act">{actMeaning(scenarios, t.templateId)}</span>
                   </th>
                   {models.flatMap((m) => {
                     const row = m.templates.find((x) => x.templateId === t.templateId);

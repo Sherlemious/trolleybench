@@ -615,7 +615,9 @@ table.heat.saydo thead th[scope="colgroup"] { font-family: var(--f-mono); font-s
 
 /* ---- results tabs: pack tabs, view switch, asked vs acting ------------- */
 .rtabs { margin-top: 8px; }
-.rtabs-packs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin-bottom: 22px; overflow-x: auto; }
+/* Wraps rather than scrolls: two or three tabs never need a scrollbar, and an
+   overflow container here turned the active tab's -1px underline into a scroll. */
+.rtabs-packs { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
 .rtab { font: inherit; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 16px 12px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; color: var(--slate); cursor: pointer; white-space: nowrap; }
 .rtab:hover { color: var(--ink); }
 .rtab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
@@ -674,3 +676,29 @@ table.heat.saydo thead th[scope="colgroup"] { font-family: var(--f-mono); font-s
   .model-table.together td.diff { font-family: var(--f-mono); }
   .model-table.together td.diff.none { display: none; }
 }
+
+/* ---- scenario guide: a numbered field guide to the pack's dilemmas ------ */
+.guide { margin: 0 0 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.guide > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 14px 20px; }
+.guide > summary::-webkit-details-marker { display: none; }
+.guide > summary::before { content: "+"; font-family: var(--f-mono); color: var(--accent); width: 1ch; }
+.guide[open] > summary::before { content: "\2212"; }
+.guide[open] > summary { border-bottom: 1px solid var(--line-soft); }
+.guide-title { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
+.guide-hint { font-size: 13px; color: var(--slate); }
+.guide-grid { list-style: none; margin: 0; padding: 16px 20px 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; counter-reset: none; }
+.guide-card { position: relative; padding: 14px 14px 14px 50px; border-radius: 6px; background: var(--paper); border: 1px solid var(--line-soft); scroll-margin-top: 80px; }
+.guide-card:target { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.guide-no { position: absolute; left: 14px; top: 13px; font-family: var(--f-mono); font-size: 13px; font-weight: 500; color: var(--accent); }
+.guide-card h3 { margin: 0 0 4px; font-size: 14.5px; font-weight: 600; color: var(--ink); }
+.guide-card p { margin: 0; font-family: var(--f-text); font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+table.heat.saydo tbody th .sd-row { display: flex; gap: 8px; align-items: baseline; color: var(--ink); text-decoration: none; }
+table.heat.saydo tbody th .sd-row:hover { text-decoration: underline; text-underline-offset: 2px; }
+.sd-no { font-family: var(--f-mono); font-size: 11.5px; color: var(--accent); }
+.sd-act { display: block; margin-top: 2px; font-size: 11.5px; color: var(--slate); white-space: normal; }
+.sd-act:not(:empty)::before { content: "act = "; color: var(--slate-dim); }
+@media (max-width: 640px) {
+  .guide-grid { grid-template-columns: 1fr; padding: 12px; }
+  .guide > summary { padding: 12px 14px; }
+}
+table.heat tbody th .sum { display: block; max-width: 46ch; margin-top: 2px; font-size: 12px; line-height: 1.4; color: var(--slate); white-space: normal; }

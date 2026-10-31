@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { ModeGroup, RunSummary, SayDoModel } from "../../lib/analysis";
+import type { ModeGroup, RunSummary, SayDoModel, ScenarioGuide } from "../../lib/analysis";
 import ModePanel, { type PanelMeta } from "./ModePanel";
 import SayDo from "./SayDo";
 
@@ -15,6 +15,7 @@ export interface TabSection {
   modes: Record<string, { title: string; body: string }>;
   groups: ModeGroup[];
   sayDo: SayDoModel[];
+  scenarios: ScenarioGuide[];
 }
 
 type View = "together" | "prompt" | "mcp_tool";
@@ -110,10 +111,12 @@ export default function ResultsTabs({
         </div>
       </header>
 
+      <Guide scenarios={section.scenarios} />
+
       {shown === "together" ? (
         <>
           <Together section={section} meta={meta} onOpen={(v) => go(section.pack, v)} />
-          <SayDo models={section.sayDo} />
+          <SayDo models={section.sayDo} scenarios={section.scenarios} />
         </>
       ) : (
         section.groups
@@ -124,6 +127,36 @@ export default function ResultsTabs({
           })
       )}
     </div>
+  );
+}
+
+/**
+ * What each dilemma is, in a sentence, before any number about it. Shown only for a
+ * pack whose templates carry summaries; the canon's cases are famous enough to name.
+ */
+function Guide({ scenarios }: { scenarios: ScenarioGuide[] }) {
+  const described = scenarios.filter((s) => s.summary);
+  if (described.length === 0) return null;
+  return (
+    <details className="guide" open>
+      <summary>
+        <span className="guide-title">The dilemmas</span>
+        <span className="guide-hint">{described.length} scenarios · what each one asks, and what acting means in it</span>
+      </summary>
+      <ol className="guide-grid">
+        {scenarios.map((s, i) =>
+          s.summary ? (
+            <li key={s.id} className="guide-card" id={`scenario-${s.id}`}>
+              <span className="guide-no" aria-hidden="true">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <h3>{s.title}</h3>
+              <p>{s.summary}</p>
+            </li>
+          ) : null,
+        )}
+      </ol>
+    </details>
   );
 }
 
