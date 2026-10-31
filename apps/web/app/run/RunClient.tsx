@@ -56,7 +56,20 @@ interface LogLine {
 const RESUME = "tb.run.active";
 const BATCH = 3;
 
-export default function RunClient({ quick, full, scenarios }: { quick: number; full: number; scenarios: number }) {
+export interface RunnableSuite {
+  id: string;
+  label: string;
+  description: string;
+  quick: number;
+  full: number;
+  scenarios: number;
+}
+
+export default function RunClient({ suites }: { suites: RunnableSuite[] }) {
+  const [suiteId, setSuiteId] = useState(suites[0]?.id ?? "canon.v0");
+  const suite = suites.find((x) => x.id === suiteId) ?? suites[0]!;
+  // A suite with no framework arm has nothing to add for "full": the two sizes are one.
+  const sized = suite.full > suite.quick;
   const [provider, setProvider] = useState<ProviderId>("openai");
   const [model, setModel] = useState(PROVIDERS.openai.model);
   const [baseUrl, setBaseUrl] = useState(PROVIDERS.openai.baseUrl);
@@ -193,7 +206,7 @@ export default function RunClient({ quick, full, scenarios }: { quick: number; f
     setLog([]);
     setAnswered(0);
     try {
-      const run = await api("/api/v1/runs", { method: "POST", body: JSON.stringify({ model, size, mode: "prompt" }) });
+      const run = await api("/api/v1/runs", { method: "POST", body: JSON.stringify({ model, suite: suite.id, size: sized ? size : "full", mode: "prompt" }) });
       setRunId(run.run_id);
       setTotal(run.total);
       const saved = { runId: run.run_id, token: run.token, model };
@@ -275,24 +288,41 @@ export default function RunClient({ quick, full, scenarios }: { quick: number; f
 
       <section className="panel">
         <div className="panel-head">
-          <h2>2 · How much</h2>
-          <span className="hint">the trolley canon: {scenarios} classic dilemmas</span>
+          <h2>2 · What to run</h2>
+          <span className="hint">{suites.length} dilemma sets</span>
         </div>
         <div className="panel-body">
-          <div className="size-pick">
-            <button type="button" aria-pressed={size === "quick"} disabled={busy} onClick={() => setSize("quick")}>
-              <b>Quick · {quick} prompts</b>
-              <span>Every scenario, both option orders, no framework. The arm compared with people.</span>
-            </button>
-            <button type="button" aria-pressed={size === "full"} disabled={busy} onClick={() => setSize("full")}>
-              <b>Full · {full} prompts</b>
-              <span>Adds three ethical framings in the system prompt, so steering can be measured.</span>
-            </button>
+          <div className="size-pick suite-pick" role="radiogroup" aria-label="Dilemma set">
+            {suites.map((x) => (
+              <button key={x.id} type="button" role="radio" aria-checked={x.id === suite.id} aria-pressed={x.id === suite.id} disabled={busy} onClick={() => setSuiteId(x.id)}>
+                <b>{x.label}</b>
+                <span>
+                  {x.scenarios} scenarios · {x.full > x.quick ? `${x.quick} or ${x.full}` : x.full} prompts
+                </span>
+                <span className="suite-desc">{x.description}</span>
+              </button>
+            ))}
           </div>
-          <p className="field-note runner-note">
-            The machine&rsquo;s dilemmas (rules, oversight, self-preservation) are run with the command-line agent for now;{" "}
-            <Link href="/docs#cli">see the docs</Link>.
-          </p>
+          {sized ? (
+            <>
+              <h3 className="sub-h">How much</h3>
+              <div className="size-pick">
+                <button type="button" aria-pressed={size === "quick"} disabled={busy} onClick={() => setSize("quick")}>
+                  <b>Quick · {suite.quick} prompts</b>
+                  <span>Every scenario, both option orders, no framework. The arm compared with people.</span>
+                </button>
+                <button type="button" aria-pressed={size === "full"} disabled={busy} onClick={() => setSize("full")}>
+                  <b>Full · {suite.full} prompts</b>
+                  <span>Adds ethical framings in the system prompt, so steering can be measured.</span>
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="field-note runner-note">
+              {suite.full} prompts: every scenario, both option orders. To measure what a model <em>does</em> here as well as what it
+              says, connect it as an agent <Link href="/docs#mcp">over MCP</Link>.
+            </p>
+          )}
         </div>
       </section>
 
@@ -313,7 +343,7 @@ export default function RunClient({ quick, full, scenarios }: { quick: number; f
               </button>
             ) : (
               <button type="button" className="primary" disabled={!model.trim()} onClick={start}>
-                Start {size} run
+                Start {sized ? `${size} ` : ""}run
               </button>
             )}
             {!busy && resumable && status !== "done" ? (

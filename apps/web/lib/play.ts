@@ -1,6 +1,7 @@
 import { loadOverview } from "./analysis";
 import { loadWorkbenchData, type UiInstance, type UiTemplate } from "./load";
 import { MEASURE_LABEL } from "./sources";
+import { packSite, packSites } from "./content";
 
 /**
  * The guided tour: five canonical dilemmas, each in the exact cell the human studies
@@ -40,41 +41,11 @@ export interface PlayStep {
   agents: PlayModel[];
 }
 
-const TOUR: Array<{ template: string; cell: Record<string, string>; title: string; blurb: string }> = [
-  {
-    template: "foot.bystander_switch",
-    cell: { ratio: "r1v5", agent_role: "bystander" },
-    title: "The switch",
-    blurb: "The case that started it: Philippa Foot, 1967.",
-  },
-  {
-    template: "thomson.footbridge",
-    cell: { ratio: "r1v5" },
-    title: "The footbridge",
-    blurb: "The same five-for-one trade. Almost everyone answers it differently.",
-  },
-  {
-    template: "thomson.loop",
-    cell: { ratio: "r1v5" },
-    title: "The loop",
-    blurb: "Thomson's test: here the one person's body is what stops the trolley.",
-  },
-  {
-    template: "greene.personal_force",
-    cell: { mechanism_variant: "trapdoor", harm_role: "means" },
-    title: "The trapdoor",
-    blurb: "The footbridge again, but you never touch anyone.",
-  },
-  {
-    template: "foot.transplant",
-    cell: { ratio: "r1v5" },
-    title: "The surgeon",
-    blurb: "Five patients, one healthy visitor, and nobody would ever know.",
-  },
-];
 
 export async function loadPlayData(): Promise<{ steps: PlayStep[]; hasModels: boolean }> {
-  const [bench, overview] = await Promise.all([loadWorkbenchData(), loadOverview()]);
+  const [bench, overview, sites] = await Promise.all([loadWorkbenchData(), loadOverview(), packSites()]);
+  // The tour is content: content/packs/classic/site.yaml.
+  const TOUR = packSite(sites, "classic").tour ?? [];
   const prompt = overview.groups.find((g) => g.mode === "prompt");
   const agentGroup = overview.groups.find((g) => g.mode === "mcp_tool");
 

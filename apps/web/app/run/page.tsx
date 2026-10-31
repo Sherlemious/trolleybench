@@ -2,7 +2,7 @@ import { pageMeta } from "../../lib/site";
 import Link from "next/link";
 import SiteNav from "../SiteNav";
 import RunClient from "./RunClient";
-import { headlineSizes } from "../../lib/load";
+import { listSuites } from "../../lib/content";
 
 export const metadata = pageMeta(
   "Run a model",
@@ -11,7 +11,7 @@ export const metadata = pageMeta(
 );
 
 export default async function RunPage() {
-  const sizes = await headlineSizes();
+  const suites = await listSuites();
   return (
     <main className="wrap">
       <SiteNav current="run" />
@@ -35,7 +35,7 @@ export default async function RunPage() {
           which model said it.
         </span>
       </p>
-      <RunClient quick={sizes.suiteQuick} full={sizes.suiteInstances} scenarios={sizes.scenarios} />
+      <RunClient suites={suites.map(({ id, label, description, quick, full, scenarios }) => ({ id, label, description, quick, full, scenarios }))} />
     </main>
   );
 }

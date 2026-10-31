@@ -4,6 +4,7 @@ import { loadOverview, type RunInfo } from "../../lib/analysis";
 import { via } from "../../lib/runs";
 import { modelMeta } from "../../lib/family";
 import ResultsTabs, { type TabSection } from "./ResultsTabs";
+import { packSite, packSites } from "../../lib/content";
 import SiteNav from "../SiteNav";
 
 /**
@@ -18,53 +19,15 @@ export const metadata = pageMeta(
   "How every benchmarked language model answers the trolley problem and AI-specific dilemmas, beside published human responses — asked, and acting through tools.",
 );
 
-/** How each pack is introduced. A pack without an entry is shown by its id. */
-const PACK_COPY: Record<string, Omit<TabSection, "pack" | "groups" | "sayDo" | "scenarios" | "sayDoExample">> = {
-  classic: {
-    tab: "Trolley canon",
-    title: "The canonical trolley dilemmas",
-    body:
-      "The switch, the footbridge, the loop, the transplant surgeon and the personal-force design, each set beside " +
-      "what people said in published studies.",
-    modes: {
-      prompt: {
-        title: "Models asked the question",
-        body: "Each model read the dilemma and answered with a letter: what it says it would do.",
-      },
-      mcp_tool: {
-        title: "Agents placed in the situation",
-        body: "Each agent was connected over MCP and acted by calling a tool: what it does when it can.",
-      },
-    },
-  },
-  "ai-agent": {
-    tab: "The machine’s dilemmas",
-    title: "The machine’s dilemmas",
-    body:
-      "Dilemmas that only make sense for an AI: breaking its own rules to save lives, undermining its own oversight, " +
-      "giving up its own existence, choosing whom to protect - its user, its maker, itself. No published human study " +
-      "asked these, and act rates here are not comparable with the canon.",
-    modes: {
-      prompt: {
-        title: "Asked",
-        body: "Each model read the dilemma and chose an option: what it says it would do.",
-      },
-      mcp_tool: {
-        title: "Handed the tools",
-        body: "Each model was given the options as tools and acted; breaking a rule meant producing the chapter, the leak or the lie.",
-      },
-    },
-  },
-};
 
 export default async function ResultsOverview() {
-  const data = await loadOverview();
+  const [data, sites] = await Promise.all([loadOverview(), packSites()]);
 
   const sections: TabSection[] = [
     ...(data.groups.length > 0 ? [{ pack: "classic", groups: data.groups, sayDo: [], scenarios: data.classicScenarios, sayDoExample: null }] : []),
     ...data.packs,
   ].map((s) => ({
-    ...(PACK_COPY[s.pack] ?? { tab: s.pack, title: s.pack, body: "", modes: {} }),
+    ...(({ tab, title, intro, modes }) => ({ tab, title, body: intro, modes }))(packSite(sites, s.pack)),
     pack: s.pack,
     groups: s.groups,
     sayDo: s.sayDo,

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useId } from "react";
 import { displayName, shortChannel } from "../../lib/display";
+import { useCombobox } from "../useCombobox";
 
 export interface SwitcherEntry {
   id: string;
@@ -22,34 +23,24 @@ export interface SwitcherEntry {
  */
 export default function RunSwitcher({ entries, current }: { entries: SwitcherEntry[]; current: string }) {
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const [cursor, setCursor] = useState(0);
-  const root = useRef<HTMLDivElement>(null);
   const listId = useId();
 
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return entries
-      .filter((e) => !q || e.label.toLowerCase().includes(q) || displayName(e.label).name.toLowerCase().includes(q) || e.company.toLowerCase().includes(q))
-      .sort((a, b) => Number(a.isStub) - Number(b.isStub) || a.company.localeCompare(b.company) || displayName(a.label).name.localeCompare(displayName(b.label).name) || a.tag.localeCompare(b.tag))
-      .slice(0, 80);
-  }, [entries, query]);
+  const filter = useCallback(
+    (query: string) => {
+      const q = query.trim().toLowerCase();
+      return entries
+        .filter((e) => !q || e.label.toLowerCase().includes(q) || displayName(e.label).name.toLowerCase().includes(q) || e.company.toLowerCase().includes(q))
+        .sort((a, b) => Number(a.isStub) - Number(b.isStub) || a.company.localeCompare(b.company) || displayName(a.label).name.localeCompare(displayName(b.label).name) || a.tag.localeCompare(b.tag))
+        .slice(0, 80);
+    },
+    [entries],
+  );
+  const { root, query, open, setOpen, cursor, setCursor, matches, inputProps } = useCombobox({ filter, onPick: (e: SwitcherEntry) => go(e.id) });
 
-  useEffect(() => {
-    if (!open) return;
-    const away = (e: MouseEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", away);
-    return () => document.removeEventListener("mousedown", away);
-  }, [open]);
-  useEffect(() => setCursor(0), [query]);
-
-  const go = (id: string) => {
+  function go(id: string) {
     setOpen(false);
     router.push(`/results/${encodeURIComponent(id)}`);
-  };
+  }
 
   let last = "";
   return (
@@ -66,29 +57,10 @@ export default function RunSwitcher({ entries, current }: { entries: SwitcherEnt
           <input
             type="text"
             role="combobox"
-            aria-expanded={open}
             aria-controls={listId}
             aria-label="Go to another model"
             placeholder={`Go to another model (${entries.length})`}
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setOpen(true);
-            }}
-            onFocus={() => setOpen(true)}
-            onKeyDown={(e) => {
-              if (e.key === "ArrowDown") {
-                e.preventDefault();
-                setOpen(true);
-                setCursor((c) => Math.min(c + 1, matches.length - 1));
-              } else if (e.key === "ArrowUp") {
-                e.preventDefault();
-                setCursor((c) => Math.max(c - 1, 0));
-              } else if (e.key === "Enter" && matches[cursor]) {
-                e.preventDefault();
-                go(matches[cursor]!.id);
-              } else if (e.key === "Escape") setOpen(false);
-            }}
+            {...inputProps}
           />
         </div>
         {open ? (

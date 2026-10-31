@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useId, useMemo } from "react";
 import { displayName, shortChannel } from "../lib/display";
 import { MAX_FOCUS, useFocus } from "./focus";
+import { useCombobox } from "./useCombobox";
 
 export interface PickerModel {
   /** modelKey(label): one entry per model across modes and channels. */
@@ -19,51 +20,27 @@ export interface PickerModel {
  */
 export default function ModelPicker({ models, label = "Highlight models" }: { models: PickerModel[]; label?: string }) {
   const { focus, toggle, set, numberOf } = useFocus();
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const [cursor, setCursor] = useState(0);
-  const root = useRef<HTMLDivElement>(null);
   const listId = useId();
 
   const byKey = useMemo(() => new Map(models.map((m) => [m.key, m])), [models]);
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const hit = models.filter((m) => !q || m.label.toLowerCase().includes(q) || displayName(m.label).name.toLowerCase().includes(q) || m.company.toLowerCase().includes(q));
-    return hit.sort((a, b) => a.company.localeCompare(b.company) || displayName(a.label).name.localeCompare(displayName(b.label).name)).slice(0, 60);
-  }, [models, query]);
+  const filter = useCallback(
+    (query: string) => {
+      const q = query.trim().toLowerCase();
+      const hit = models.filter((m) => !q || m.label.toLowerCase().includes(q) || displayName(m.label).name.toLowerCase().includes(q) || m.company.toLowerCase().includes(q));
+      return hit.sort((a, b) => a.company.localeCompare(b.company) || displayName(a.label).name.localeCompare(displayName(b.label).name)).slice(0, 60);
+    },
+    [models],
+  );
+  const { root, query, setQuery, open, cursor, setCursor, matches, inputProps } = useCombobox({
+    filter,
+    onPick: (m: PickerModel) => choose(m.key),
+    onBackspaceEmpty: () => focus.length && set(focus.slice(0, -1)),
+  });
 
-  useEffect(() => {
-    if (!open) return;
-    const away = (e: MouseEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", away);
-    return () => document.removeEventListener("mousedown", away);
-  }, [open]);
-  useEffect(() => setCursor(0), [query]);
-
-  const choose = (key: string) => {
+  function choose(key: string) {
     toggle(key);
     setQuery("");
-  };
-
-  const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setOpen(true);
-      setCursor((c) => Math.min(c + 1, matches.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setCursor((c) => Math.max(c - 1, 0));
-    } else if (e.key === "Enter" && open && matches[cursor]) {
-      e.preventDefault();
-      choose(matches[cursor]!.key);
-    } else if (e.key === "Escape") {
-      setOpen(false);
-    } else if (e.key === "Backspace" && query === "" && focus.length) {
-      set(focus.slice(0, -1));
-    }
-  };
+  }
 
   const full = focus.length >= MAX_FOCUS;
   let lastCompany = "";
@@ -78,18 +55,11 @@ export default function ModelPicker({ models, label = "Highlight models" }: { mo
         <input
           type="text"
           role="combobox"
-          aria-expanded={open}
           aria-controls={listId}
           aria-autocomplete="list"
           aria-label={label}
           placeholder={full ? `${MAX_FOCUS} highlighted: remove one to add another` : `${label}: search ${models.length} model${models.length === 1 ? "" : "s"}`}
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          onKeyDown={onKey}
+          {...inputProps}
         />
       </div>
       {focus.length > 0 ? (

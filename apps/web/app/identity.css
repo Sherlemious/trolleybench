@@ -419,3 +419,6 @@ main.wrap { padding-bottom: 0; }
 .form-grid input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand) 35%, transparent); }
 .size-pick button[aria-pressed="true"] { border-color: var(--ink); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--ink); }
 .progress-bar span { background: var(--brand); }
+.suite-pick .suite-desc { margin-top: 4px; font-size: 13px; color: var(--slate); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.suite-pick button > span:not(.suite-desc) { font-weight: 600; color: var(--ink-2); }
+.size-pick + .sub-h, .suite-pick + .sub-h { margin-top: 22px; }
