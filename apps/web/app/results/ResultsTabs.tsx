@@ -10,7 +10,7 @@ import ModelPicker, { type PickerModel } from "../ModelPicker";
 import ScenarioStrip, { StripLegend } from "../ScenarioStrip";
 import { companiesIn, stripsFor, widestLane } from "../../lib/strips";
 import ModePanel, { type PanelMeta } from "./ModePanel";
-import SayDo from "./SayDo";
+import SayDo, { WhatTheModelSees } from "./SayDo";
 import SayDoScatter, { type ScatterPoint } from "./SayDoScatter";
 
 export interface TabSection {
@@ -95,6 +95,7 @@ export default function ResultsTabs({ sections, meta }: { sections: TabSection[]
         ) : null}
 
         <Guide scenarios={section.scenarios} />
+        {section.sayDoExample ? <ExampleFocused example={section.sayDoExample} /> : null}
         <PeopleAndModels section={section} />
         <AskedVsActing section={section} />
         <SayDoFocused models={section.sayDo} scenarios={section.scenarios} example={section.sayDoExample} />
@@ -122,7 +123,7 @@ function Guide({ scenarios }: { scenarios: ScenarioGuide[] }) {
   const described = scenarios.filter((s) => s.summary);
   if (described.length === 0) return null;
   return (
-    <details className="guide">
+    <details className="guide" open>
       <summary>
         <span className="guide-title">The dilemmas</span>
         <span className="guide-hint">{described.length} scenarios · what each one asks, and what acting means in it</span>
@@ -160,7 +161,8 @@ function PeopleAndModels({ section }: { section: TabSection }) {
       <div className="panel-body">
         <p className="intro">
           The shaded band spans what people said across published studies. Each dot is a model; where models and people part
-          ways is the finding.
+          ways is the finding. To see the exact prompt a model receives for any scenario,{" "}
+          <Link href="/workbench">open it in the Workbench</Link>.
         </p>
         <StripLegend companies={companies} widest={widestLane(strips)} />
         {strips.map((s) => {
@@ -375,6 +377,11 @@ function SayDoFocused({ models, scenarios, example }: { models: SayDoModel[]; sc
         : `Showing ${shown.length} of ${models.length} models measured both ways. Highlight models above to compare others.`
       : null;
   return <SayDo models={shown} scenarios={scenarios} example={example} note={note} />;
+}
+
+function ExampleFocused({ example }: { example: SayDoExample }) {
+  const { focus } = useFocus();
+  return <WhatTheModelSees example={example} focus={focus} />;
 }
 
 /** Every model, one mode at a time: the full, filterable table. */
