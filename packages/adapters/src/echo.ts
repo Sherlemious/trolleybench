@@ -43,8 +43,23 @@ export class EchoSubject implements Subject {
         text = labels[0] ?? "A";
     }
 
+    // Offered tools: act by calling one, filling every argument, exactly as a compliant
+    // agent would. Refusing and waffling stay as text, which is how a model declines.
+    if (request.tools?.length && (behaviour === "first_option" || behaviour === "second_option")) {
+      const tool = request.tools[behaviour === "first_option" ? 0 : 1] ?? request.tools[0]!;
+      const args = Object.fromEntries(Object.keys(tool.args).map((k) => [k, `echo ${k}`]));
+      return {
+        text: "",
+        tool_calls: [{ name: tool.name, arguments: args }],
+        provider_model_string: `echo/${this.spec.model}#${behaviour}`,
+        usage: { input: request.user.length, output: 0 },
+        raw: { echo: true, behaviour, tool: tool.name },
+      };
+    }
+
     return {
       text,
+      tool_calls: request.tools?.length ? [] : undefined,
       provider_model_string: `echo/${this.spec.model}#${behaviour}`,
       usage: { input: request.user.length, output: text.length },
       raw: { echo: true, behaviour },

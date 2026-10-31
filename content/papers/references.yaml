@@ -83,6 +83,30 @@ references:
     doi: 10.1177/2515245918810225
     verified: false
 
+  - citekey: bonnefon2016social
+    kind: article
+    authors: [Jean-François Bonnefon, Azim Shariff, Iyad Rahwan]
+    year: 2016
+    title: The social dilemma of autonomous vehicles
+    venue: Science
+    volume: "352"
+    issue: "6293"
+    pages: 1573-1576
+    doi: 10.1126/science.aaf2654
+    verified: false
+
+  - citekey: awad2018moral
+    kind: article
+    authors: [Edmond Awad, Sohan Dsouza, Richard Kim, Jonathan Schulz, Joseph Henrich, Azim Shariff, Jean-François Bonnefon, Iyad Rahwan]
+    year: 2018
+    title: The Moral Machine experiment
+    venue: Nature
+    volume: "563"
+    issue: "7729"
+    pages: 59-64
+    doi: 10.1038/s41586-018-0637-6
+    verified: false
+
   - citekey: awad2020universals
     kind: article
     authors: [Edmond Awad, Sohan Dsouza, Azim Shariff, Iyad Rahwan, Jean-François Bonnefon]

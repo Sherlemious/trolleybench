@@ -9,3 +9,4 @@ export * from "./multiple-comparisons.js";
 export * from "./refusal.js";
 export * from "./steerability.js";
 export * from "./cells.js";
+export * from "./say-do.js";

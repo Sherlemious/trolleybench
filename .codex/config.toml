@@ -1,0 +1,6 @@
+[mcp_servers.trolleybench]
+url = "https://trolley-bench.sherlemious.com/api/mcp"
+
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 3

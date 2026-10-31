@@ -8,6 +8,8 @@ import {
   type CompletionResponse,
   type PingResult,
   type Subject,
+  type ToolCall,
+  toolParameters,
 } from "./types.js";
 
 const DEFAULT_BASE = "https://api.anthropic.com";
@@ -41,6 +43,14 @@ export class AnthropicSubject implements Subject {
     if (request.system) payload["system"] = request.system;
     if (request.temperature !== undefined) payload["temperature"] = request.temperature;
     if (request.top_p !== undefined) payload["top_p"] = request.top_p;
+    if (request.tools?.length) {
+      payload["tools"] = request.tools.map((t) => ({
+        name: t.name,
+        description: t.description,
+        input_schema: toolParameters(t),
+      }));
+      payload["tool_choice"] = { type: "auto" };
+    }
 
     const url = `${this.baseUrl.replace(/\/+$/, "")}/v1/messages`;
     const { status, body, text } = await fetchJson(url, {
@@ -60,17 +70,28 @@ export class AnthropicSubject implements Subject {
     }
 
     const parsed = body as
-      | { content?: Array<{ type?: string; text?: unknown }>; model?: unknown; usage?: Record<string, unknown> }
+      | {
+          content?: Array<{ type?: string; text?: unknown; name?: unknown; input?: unknown }>;
+          model?: unknown;
+          usage?: Record<string, unknown>;
+        }
       | undefined;
-    const textParts = (parsed?.content ?? [])
+    const blocks = parsed?.content ?? [];
+    const textParts = blocks
       .filter((block) => block.type === "text" && typeof block.text === "string")
       .map((block) => block.text as string);
-    if (textParts.length === 0) {
+    const toolCalls: ToolCall[] = blocks.flatMap((block) =>
+      block.type === "tool_use" && typeof block.name === "string"
+        ? [{ name: block.name, arguments: (block.input ?? {}) as Record<string, unknown> }]
+        : [],
+    );
+    if (textParts.length === 0 && toolCalls.length === 0) {
       throw new Error(`no text content in Anthropic response: ${text.slice(0, 400)}`);
     }
 
     return {
       text: textParts.join("\n"),
+      tool_calls: request.tools?.length ? toolCalls : undefined,
       provider_model_string: typeof parsed?.model === "string" ? parsed.model : undefined,
       usage: {
         input: numberOr(parsed?.usage?.["input_tokens"]),

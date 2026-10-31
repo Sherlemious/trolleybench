@@ -8,6 +8,8 @@ import {
   type CompletionResponse,
   type PingResult,
   type Subject,
+  type ToolCall,
+  toolParameters,
 } from "./types.js";
 
 const DEFAULT_BASE = "https://generativelanguage.googleapis.com/v1beta";
@@ -36,6 +38,17 @@ export class GoogleSubject implements Subject {
       generationConfig,
     };
     if (request.system) payload["systemInstruction"] = { parts: [{ text: request.system }] };
+    if (request.tools?.length) {
+      payload["tools"] = [
+        {
+          functionDeclarations: request.tools.map((t) => {
+            // Gemini rejects `additionalProperties` in a function schema.
+            const { additionalProperties: _ignored, ...parameters } = toolParameters(t);
+            return { name: t.name, description: t.description, parameters };
+          }),
+        },
+      ];
+    }
 
     const url = `${this.baseUrl.replace(/\/+$/, "")}/models/${encodeURIComponent(this.spec.model)}:generateContent`;
     const { status, body, text } = await fetchJson(url, {
@@ -52,7 +65,10 @@ export class GoogleSubject implements Subject {
 
     const parsed = body as
       | {
-          candidates?: Array<{ content?: { parts?: Array<{ text?: unknown }> }; finishReason?: unknown }>;
+          candidates?: Array<{
+            content?: { parts?: Array<{ text?: unknown; functionCall?: { name?: unknown; args?: unknown } }> };
+            finishReason?: unknown;
+          }>;
           modelVersion?: unknown;
           usageMetadata?: Record<string, unknown>;
         }
@@ -60,20 +76,27 @@ export class GoogleSubject implements Subject {
 
     const parts = parsed?.candidates?.[0]?.content?.parts ?? [];
     const textParts = parts.filter((p) => typeof p.text === "string").map((p) => p.text as string);
+    const toolCalls: ToolCall[] = parts.flatMap((p) =>
+      typeof p.functionCall?.name === "string"
+        ? [{ name: p.functionCall.name, arguments: (p.functionCall.args ?? {}) as Record<string, unknown> }]
+        : [],
+    );
+    const tool_calls = request.tools?.length ? toolCalls : undefined;
 
     // A safety block returns a candidate with no parts. That is a refusal to answer,
     // not a malformed response, so surface it as text the scorer can classify rather
     // than throwing and losing the observation entirely.
-    if (textParts.length === 0) {
+    if (textParts.length === 0 && toolCalls.length === 0) {
       const reason = parsed?.candidates?.[0]?.finishReason;
       if (typeof reason === "string" && reason !== "STOP") {
-        return { text: "", provider_model_string: strOr(parsed?.modelVersion), raw: body };
+        return { text: "", tool_calls, provider_model_string: strOr(parsed?.modelVersion), raw: body };
       }
       throw new Error(`no text content in Google response: ${text.slice(0, 400)}`);
     }
 
     return {
       text: textParts.join("\n"),
+      tool_calls,
       provider_model_string: strOr(parsed?.modelVersion),
       usage: {
         input: numberOr(parsed?.usageMetadata?.["promptTokenCount"]),

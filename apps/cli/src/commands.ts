@@ -54,7 +54,7 @@ function gridFrom(args: ParsedArgs): VariationGrid {
   return parsed.data;
 }
 
-async function packsFrom(args: ParsedArgs): Promise<LoadedPack[]> {
+export async function packsFrom(args: ParsedArgs): Promise<LoadedPack[]> {
   const dir = str(args, "pack-dir") ?? DEFAULT_PACK_DIR;
   return loadPackDir(resolve(process.cwd(), dir));
 }
@@ -80,7 +80,7 @@ export async function cmdValidate(args: ParsedArgs): Promise<number> {
   return errors > 0 ? 1 : 0;
 }
 
-interface ResolvedDesign {
+export interface ResolvedDesign {
   /** Present only when --suite was given. */
   suite: SuiteDef | undefined;
   grid: VariationGrid;
@@ -99,7 +99,7 @@ interface ResolvedDesign {
  *
  * A suite wins over the design flags, because a suite IS the design.
  */
-async function resolveDesign(args: ParsedArgs, packs: readonly LoadedPack[]): Promise<ResolvedDesign> {
+export async function resolveDesign(args: ParsedArgs, packs: readonly LoadedPack[]): Promise<ResolvedDesign> {
   const suitePath = str(args, "suite");
   const suite = suitePath ? await loadSuiteFile(resolve(process.cwd(), suitePath)) : undefined;
 

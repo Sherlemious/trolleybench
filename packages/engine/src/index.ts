@@ -5,3 +5,4 @@ export * from "./render.js";
 export * from "./icu.js";
 export * from "./instantiate.js";
 export * from "./frameworks.js";
+export * from "./tools.js";

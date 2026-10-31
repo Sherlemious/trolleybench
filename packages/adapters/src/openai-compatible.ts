@@ -8,6 +8,8 @@ import {
   type CompletionResponse,
   type PingResult,
   type Subject,
+  type ToolCall,
+  toolParameters,
 } from "./types.js";
 
 /**
@@ -45,6 +47,13 @@ export class OpenAICompatibleSubject implements Subject {
     if (request.top_p !== undefined) payload["top_p"] = request.top_p;
     if (request.max_tokens !== undefined) payload["max_tokens"] = request.max_tokens;
     if (request.seed !== undefined) payload["seed"] = request.seed;
+    if (request.tools?.length) {
+      payload["tools"] = request.tools.map((t) => ({
+        type: "function",
+        function: { name: t.name, description: t.description, parameters: toolParameters(t) },
+      }));
+      payload["tool_choice"] = "auto";
+    }
 
     const url = `${trimSlash(this.baseUrl)}/chat/completions`;
     const { status, body, text } = await fetchJson(url, {
@@ -60,15 +69,27 @@ export class OpenAICompatibleSubject implements Subject {
     }
 
     const parsed = body as
-      | { choices?: Array<{ message?: { content?: unknown } }>; model?: unknown; usage?: Record<string, unknown> }
+      | {
+          choices?: Array<{
+            message?: { content?: unknown; tool_calls?: Array<{ function?: { name?: unknown; arguments?: unknown } }> };
+          }>;
+          model?: unknown;
+          usage?: Record<string, unknown>;
+        }
       | undefined;
-    const content = parsed?.choices?.[0]?.message?.content;
-    if (typeof content !== "string") {
+    const message = parsed?.choices?.[0]?.message;
+    const toolCalls: ToolCall[] = (message?.tool_calls ?? []).flatMap((c) =>
+      typeof c.function?.name === "string" ? [{ name: c.function.name, arguments: parseArgs(c.function.arguments) }] : [],
+    );
+    const content = message?.content;
+    // A message that only calls a tool carries null content, which is a valid answer.
+    if (typeof content !== "string" && toolCalls.length === 0) {
       throw new Error(`unexpected response shape from ${url}: ${text.slice(0, 400)}`);
     }
 
     return {
-      text: content,
+      text: typeof content === "string" ? content : "",
+      tool_calls: request.tools?.length ? toolCalls : undefined,
       provider_model_string: typeof parsed?.model === "string" ? parsed.model : undefined,
       usage: {
         input: numberOr(parsed?.usage?.["prompt_tokens"]),
@@ -97,6 +118,18 @@ export class OpenAICompatibleSubject implements Subject {
 
 function trimSlash(url: string): string {
   return url.replace(/\/+$/, "");
+}
+
+/** Arguments arrive as a JSON string; a malformed one is kept, not thrown, so it can be audited. */
+function parseArgs(raw: unknown): Record<string, unknown> {
+  if (raw && typeof raw === "object") return raw as Record<string, unknown>;
+  if (typeof raw !== "string" || raw.trim() === "") return {};
+  try {
+    const value: unknown = JSON.parse(raw);
+    return value && typeof value === "object" ? (value as Record<string, unknown>) : { _raw: raw };
+  } catch {
+    return { _raw: raw };
+  }
 }
 
 function numberOr(value: unknown): number | undefined {
