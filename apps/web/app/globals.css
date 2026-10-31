@@ -64,7 +64,7 @@ button { font-family: inherit; }
   /* System default stamps no attribute, so prefers-color-scheme is the only signal.
      Guarded so an explicit light choice still beats a dark OS. */
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
+    :root:not([data-mode]) {
       --ink: #eef0f2;
       --ink-2: #c6cbd1;
       --slate: #9aa1a9;
@@ -104,7 +104,7 @@ button { font-family: inherit; }
     }
   }
 
-  :root[data-theme="dark"] {
+  :root[data-mode="dark"] {
     --ink: #eef0f2;
     --ink-2: #c6cbd1;
     --slate: #9aa1a9;
@@ -142,8 +142,8 @@ button { font-family: inherit; }
     --elev: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 20px rgb(0 0 0 / 0.25);
     --elev-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 12px 32px rgb(0 0 0 / 0.35);
   }
-  :root[data-theme="dark"] { color-scheme: dark; }
-  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-mode="dark"] { color-scheme: dark; }
+  :root[data-mode="light"] { color-scheme: light; }
 
   body {
     margin: 0;

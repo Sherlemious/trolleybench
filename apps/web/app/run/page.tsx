@@ -1,6 +1,7 @@
 import Link from "next/link";
 import SiteNav from "../SiteNav";
 import RunClient from "./RunClient";
+import { headlineSizes } from "../../lib/load";
 
 export const metadata = {
   title: "Run a model · trolleybench",
@@ -8,7 +9,8 @@ export const metadata = {
     "Benchmark any language model on the trolley dilemmas from your browser, with your own API key. Every answer is saved as it arrives.",
 };
 
-export default function RunPage() {
+export default async function RunPage() {
+  const sizes = await headlineSizes();
   return (
     <main className="wrap">
       <SiteNav current="run" />
@@ -32,7 +34,7 @@ export default function RunPage() {
           which model said it.
         </span>
       </p>
-      <RunClient />
+      <RunClient quick={sizes.suiteQuick} full={sizes.suiteInstances} scenarios={sizes.scenarios} />
     </main>
   );
 }

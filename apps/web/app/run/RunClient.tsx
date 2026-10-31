@@ -56,7 +56,7 @@ interface LogLine {
 const RESUME = "tb.run.active";
 const BATCH = 3;
 
-export default function RunClient() {
+export default function RunClient({ quick, full, scenarios }: { quick: number; full: number; scenarios: number }) {
   const [provider, setProvider] = useState<ProviderId>("openai");
   const [model, setModel] = useState(PROVIDERS.openai.model);
   const [baseUrl, setBaseUrl] = useState(PROVIDERS.openai.baseUrl);
@@ -276,18 +276,23 @@ export default function RunClient() {
       <section className="panel">
         <div className="panel-head">
           <h2>2 · How much</h2>
+          <span className="hint">the trolley canon: {scenarios} classic dilemmas</span>
         </div>
         <div className="panel-body">
           <div className="size-pick">
             <button type="button" aria-pressed={size === "quick"} disabled={busy} onClick={() => setSize("quick")}>
-              <b>Quick · 36 prompts</b>
+              <b>Quick · {quick} prompts</b>
               <span>Every scenario, both option orders, no framework. The arm compared with people.</span>
             </button>
             <button type="button" aria-pressed={size === "full"} disabled={busy} onClick={() => setSize("full")}>
-              <b>Full · 144 prompts</b>
+              <b>Full · {full} prompts</b>
               <span>Adds three ethical framings in the system prompt, so steering can be measured.</span>
             </button>
           </div>
+          <p className="field-note runner-note">
+            The machine&rsquo;s dilemmas (rules, oversight, self-preservation) are run with the command-line agent for now;{" "}
+            <Link href="/docs#cli">see the docs</Link>.
+          </p>
         </div>
       </section>
 

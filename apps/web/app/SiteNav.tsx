@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
 export const NAV_LINKS = [
@@ -30,7 +31,7 @@ export default function SiteNav({ current }: { current: NavKey }) {
   return (
     <nav className="sitenav" aria-label="Site">
       <Link href="/" className="wordmark" aria-current={current === "home" ? "page" : undefined}>
-        <span className="wm-mark" aria-hidden="true" />
+        <Logo size={26} />
         <span>trolley<b>bench</b></span>
       </Link>
       <ul className="nav-links">{links}</ul>

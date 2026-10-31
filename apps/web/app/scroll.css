@@ -21,12 +21,12 @@
   --scroll-shade: rgba(16, 22, 28, 0.16);
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-mode]) {
     --car: color-mix(in srgb, var(--slate) 55%, var(--paper));
     --scroll-shade: rgba(0, 0, 0, 0.55);
   }
 }
-:root[data-theme="dark"] {
+:root[data-mode="dark"] {
   --car: color-mix(in srgb, var(--slate) 55%, var(--paper));
   --scroll-shade: rgba(0, 0, 0, 0.55);
 }

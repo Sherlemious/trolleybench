@@ -10,6 +10,7 @@ import "./pages.css";
 import "./scroll.css";
 import "./strip.css";
 import "./identity.css";
+import "./themes.css";
 
 /* Self-hosted by Next at build time: no request to Google from the visitor, no layout shift. */
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -31,7 +32,7 @@ export const viewport = {
 };
 
 /** Runs before paint, so a saved light/dark choice never flashes the other theme first. */
-const THEME_BOOT = `try{var t=localStorage.getItem("tb-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}`;
+const THEME_BOOT = `try{var d=document.documentElement,t=localStorage.getItem("tb-theme"),a=localStorage.getItem("tb-accent"),m={light:"light",dark:"dark",sepia:"light",midnight:"dark",terminal:"dark"};if(t&&m[t]){d.setAttribute("data-theme",t);d.setAttribute("data-mode",m[t])}if(a==="blue"||a==="green"||a==="red")d.setAttribute("data-accent",a)}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

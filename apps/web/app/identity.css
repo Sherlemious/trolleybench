@@ -99,16 +99,7 @@ table.mx tbody th, .sd-no, .guide-no, .barrow .name, .bar span, table.matrix td,
   flex: none;
 }
 .sitenav .wordmark b { color: var(--ink); font-weight: 700; }
-/* The mark: a signal lamp, amber over ink. */
-.wm-mark {
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
-  background:
-    radial-gradient(circle at 50% 34%, var(--brand) 0 4.5px, transparent 5px),
-    radial-gradient(circle at 50% 72%, color-mix(in oklab, var(--paper) 30%, transparent) 0 3px, transparent 3.5px),
-    var(--ink);
-}
+.logo { display: block; flex: none; }
 .nav-links { display: flex; gap: 2px; margin: 0; padding: 0; list-style: none; flex: 1; min-width: 0; }
 .nav-links a, .nav-menu ul a {
   display: block;
@@ -415,7 +406,7 @@ main.wrap { padding-bottom: 0; }
 /* Segmented controls may wrap (long factor lists): a rounded rectangle wraps cleanly, a pill does not. */
 .seg { flex-wrap: wrap; border-radius: 12px; }
 .seg button { border-radius: 9px; }
-.field .seg, .variant-controls .seg { display: flex; width: fit-content; max-width: 100%; }
+.field .seg, .variant-controls .seg, .rail .seg { display: flex; width: fit-content; max-width: 100%; margin-left: 0; margin-right: auto; }
 
 /* ---- run a model ------------------------------------------------------------ */
 .seg.providers { display: grid; grid-template-columns: repeat(5, auto); width: fit-content; max-width: 100%; }

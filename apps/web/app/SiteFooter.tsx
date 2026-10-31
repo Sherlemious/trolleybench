@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Logo from "./Logo";
 import { NAV_LINKS, REPO } from "./SiteNav";
 
 /** One footer for every page: where to go next, where the code is, what the licences are. */
@@ -10,7 +11,7 @@ export default function SiteFooter() {
       <div className="site-foot-inner">
         <div className="site-foot-brand">
           <Link href="/" className="wordmark">
-            <span className="wm-mark" aria-hidden="true" />
+            <Logo size={26} />
             <span>trolley<b>bench</b></span>
           </Link>
           <p>An open, reproducible benchmark of how language models answer moral dilemmas, set beside published human responses.</p>

@@ -36,7 +36,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .fig-stage {
+  :root:not([data-mode]) .fig-stage {
     --rail: #b4c0c9;
     --struct: color-mix(in srgb, var(--slate-dim) 55%, var(--surface));
     --struct-dark: color-mix(in srgb, var(--slate) 55%, var(--ink));
@@ -49,7 +49,7 @@
     --grain-invert: 1;
   }
 }
-:root[data-theme="dark"] .fig-stage {
+:root[data-mode="dark"] .fig-stage {
   --rail: #b4c0c9;
   --struct: color-mix(in srgb, var(--slate-dim) 55%, var(--surface));
   --struct-dark: color-mix(in srgb, var(--slate) 55%, var(--ink));

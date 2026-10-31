@@ -1,0 +1,148 @@
+/* Themes and accents.
+
+   Two independent choices, stamped on <html> by the theme menu (and by a boot script
+   before paint, so there is no flash):
+
+     data-mode   light | dark       which family of tokens applies; absent = follow the OS
+     data-theme  light | dark | sepia | midnight | terminal   the surfaces and ink
+     data-accent amber | blue | green | red                   the brand colour
+
+   Light and dark are defined in globals.css. A whole-site theme here only re-tones
+   surfaces, ink and lines on top of its mode, so every component, chart and the trolley
+   scene keep working. Chart colours are never themed: the company palette and act/omit
+   colours stay the validated sets for the mode, and only the chrome around them changes.
+
+   Accents keep the rule from globals.css: --brand is a fill with --on-brand text, and
+   --accent is the text-safe variant for links and labels, chosen per mode for contrast. */
+
+/* ---- whole-site themes ------------------------------------------------------- */
+
+/* Sepia: warm paper and brown ink, for long reading. */
+:root[data-theme="sepia"] {
+  --ink: #2b2117;
+  --ink-2: #4a3c2e;
+  --slate: #6b5c4b;
+  --slate-dim: #685948;
+  --paper: #f3ead8;
+  --surface: #fbf5e8;
+  --surface-2: #ece1cb;
+  --line: #d9cbae;
+  --line-soft: #e6d9c0;
+  --dead-soft: #e7dcc6;
+  --people: #4a3c2e;
+  --people-band: rgb(43 33 23 / 0.08);
+  --elev: 0 1px 2px rgb(60 40 10 / 0.07), 0 6px 20px rgb(60 40 10 / 0.06);
+  --elev-lift: 0 2px 4px rgb(60 40 10 / 0.08), 0 12px 32px rgb(60 40 10 / 0.12);
+}
+
+/* Midnight: deep blue night, softer than the neutral dark. */
+:root[data-theme="midnight"] {
+  --ink: #e8ecf7;
+  --ink-2: #bfc8de;
+  --slate: #97a3c0;
+  --slate-dim: #8f9bb8;
+  --paper: #0a0f1e;
+  --surface: #111a2e;
+  --surface-2: #19233d;
+  --line: #27345a;
+  --line-soft: #1d2846;
+  --dead-soft: #18213a;
+  --people: #bfc8de;
+  --people-band: rgb(191 200 222 / 0.1);
+}
+
+/* Terminal: green phosphor on black, set entirely in the monospace face. */
+:root[data-theme="terminal"] {
+  --ink: #d4f7dc;
+  --ink-2: #a6d8b2;
+  --slate: #7fae8b;
+  --slate-dim: #78a784;
+  --paper: #040705;
+  --surface: #09100b;
+  --surface-2: #101a13;
+  --line: #1f3326;
+  --line-soft: #16251b;
+  --dead-soft: #0f1912;
+  --people: #a6d8b2;
+  --people-band: rgb(166 216 178 / 0.09);
+  --f-ui: var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
+  --f-text: var(--f-ui);
+  --radius: 4px;
+  --radius-sm: 3px;
+}
+:root[data-theme="terminal"] body { letter-spacing: -0.01em; }
+:root[data-theme="terminal"] h1, :root[data-theme="terminal"] h2 { letter-spacing: -0.03em; }
+
+/* ---- accents ---------------------------------------------------------------- */
+/* Amber is the default and lives in globals.css. Each accent: a fill with legible text
+   on it (>= 4.5:1), and a text colour that reads on that mode's surfaces. */
+
+:root[data-accent="blue"] { --brand: #2a64d8; --brand-hover: #1f55c4; --on-brand: #ffffff; --accent: #1f55c4; --accent-soft: #e3ebfd; }
+:root[data-accent="green"] { --brand: #1c7f45; --brand-hover: #166b3a; --on-brand: #ffffff; --accent: #176b3a; --accent-soft: #dcf1e4; }
+:root[data-accent="red"] { --brand: #d1343a; --brand-hover: #b82a30; --on-brand: #ffffff; --accent: #b02a2f; --accent-soft: #fde3e3; }
+
+:root[data-mode="dark"][data-accent="blue"] { --brand: #4f86f0; --brand-hover: #6b99f3; --on-brand: #0a0f1e; --accent: #93b4ff; --accent-soft: #16233f; }
+:root[data-mode="dark"][data-accent="green"] { --brand: #3fbf74; --brand-hover: #5ccd8a; --on-brand: #04130a; --accent: #74d69c; --accent-soft: #10291a; }
+:root[data-mode="dark"][data-accent="red"] { --brand: #ef5b60; --brand-hover: #f2777b; --on-brand: #1a0507; --accent: #ff9497; --accent-soft: #3a1718; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode])[data-accent="blue"] { --brand: #4f86f0; --brand-hover: #6b99f3; --on-brand: #0a0f1e; --accent: #93b4ff; --accent-soft: #16233f; }
+  :root:not([data-mode])[data-accent="green"] { --brand: #3fbf74; --brand-hover: #5ccd8a; --on-brand: #04130a; --accent: #74d69c; --accent-soft: #10291a; }
+  :root:not([data-mode])[data-accent="red"] { --brand: #ef5b60; --brand-hover: #f2777b; --on-brand: #1a0507; --accent: #ff9497; --accent-soft: #3a1718; }
+}
+
+/* Sepia keeps its accents a touch warmer-legible on paper. */
+:root[data-theme="sepia"]:not([data-accent]) { --accent: #7a4d00; --accent-soft: #f6e6bf; }
+
+/* ---- theme menu ---------------------------------------------------------------- */
+.theme-menu { position: relative; }
+.theme-menu > summary { list-style: none; }
+.theme-menu > summary::-webkit-details-marker { display: none; }
+.theme-pop {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 40;
+  width: 300px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--elev-lift);
+}
+.theme-pop h2 { margin: 0 0 8px; font-size: 12.5px; font-weight: 600; color: var(--slate); letter-spacing: 0; }
+.theme-pop h2 + .theme-grid { margin-bottom: 16px; }
+.theme-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.theme-opt {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--ink);
+  background: none;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.theme-opt:hover { border-color: var(--line); background: var(--surface-2); }
+.theme-opt[aria-checked="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.theme-swatch { position: relative; height: 34px; border-radius: 6px; overflow: hidden; border: 1px solid rgb(0 0 0 / 0.08); }
+.theme-swatch i { position: absolute; left: 6px; right: 14px; height: 4px; border-radius: 2px; }
+.theme-swatch i:nth-child(1) { top: 8px; }
+.theme-swatch i:nth-child(2) { top: 16px; right: 26px; opacity: 0.55; }
+.theme-swatch b { position: absolute; right: 6px; bottom: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--brand); }
+.accent-row { display: flex; gap: 10px; }
+.accent-opt {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 2px rgb(0 0 0 / 0.08);
+}
+.accent-opt[aria-checked="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+@media (max-width: 420px) { .theme-pop { width: min(300px, calc(100vw - 32px)); right: -48px; } }
