@@ -8,7 +8,7 @@ export const metadata = {
     "Why and how to use trolleybench: run any model from the browser, over MCP, through the HTTP API or with the command-line tool.",
 };
 
-const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://web-kappa-eosin-81.vercel.app").replace(/\/+$/, "");
+const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://trolley-bench.sherlemious.com").replace(/\/+$/, "");
 
 const TOC = [
   ["why", "Why use it"],

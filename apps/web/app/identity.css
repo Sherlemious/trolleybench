@@ -1,0 +1,316 @@
+/* The site's visual identity, loaded last.
+
+   "Railway signal": warm white paper, ink type, one signal-amber brand colour, data in
+   the validated company palette. One sans family (Inter) for headings, prose and UI;
+   monospace only for code, hashes and run ids.
+
+   Earlier sheets (globals, site, pages, results) define layout and components; this
+   one sets the look across them: type, cards, buttons, labels. Tokens live in
+   globals.css, and nothing here introduces a colour of its own. */
+
+/* ---- type ------------------------------------------------------------------ */
+h1, h2, h3, h4 { font-family: var(--f-ui); color: var(--ink); text-wrap: balance; }
+h1 { font-weight: 700; letter-spacing: -0.025em; }
+h2 { font-weight: 650; letter-spacing: -0.015em; }
+h3 { font-weight: 600; letter-spacing: -0.005em; }
+p { text-wrap: pretty; }
+code, pre, kbd { font-family: var(--f-mono); }
+
+.page-head { padding-block: 48px 28px; }
+.page-head h1 { font-size: clamp(30px, 4.6vw, 46px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.08; }
+.lede { font-size: 17px; line-height: 1.6; color: var(--ink-2); max-width: 64ch; margin-top: 14px; }
+
+/* Eyebrow: one small amber marker per page, in the UI face. */
+.eyebrow, .headline p.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-family: var(--f-ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--accent);
+}
+.eyebrow::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand) 25%, transparent);
+}
+
+/* Labels lose the terminal look: sentence case, no tracking, UI face. */
+.panel-head h2, .field > h2, .field > h3, .stats dt, .stat-label, .menu-label, .filters .f-name,
+.guide-title, .method-title, .method-sub, .sub-h, .reveal h2, .reveal-sub, .cmp-level, .vt-label,
+.ident dt, .hashbar dt, .sd-factor h5, .way-tag, .runs-label, .kpi-label, .levels thead th,
+.model-table thead th, .sysblock .lbl, .model-table.together td::before {
+  font-family: var(--f-ui);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.panel-head h2 { font-size: 15px; font-weight: 650; color: var(--ink); }
+.field > h2, .field > h3 { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.guide-title, .method-title { font-size: 14px; font-weight: 600; }
+.sub-h, .method-sub, .reveal h2, .reveal-sub { font-size: 15px; font-weight: 650; color: var(--ink); }
+.model-table thead th, .levels thead th { font-size: 12.5px; font-weight: 600; color: var(--slate); }
+.stats dt, .ident dt, .hashbar dt, .kpi-label { font-size: 12.5px; color: var(--slate); }
+.cmp-level { font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+
+/* Model names and numbers read in the UI face; tabular figures keep columns aligned. */
+.model-link, .tg-name, .cmp-row.model .who, .saydo-card .who, .ans .who, .reveal-bars .mono, .chip,
+.runs a, .rtab-sub, .cmp-cells, .cmp-axis .tick, .run-list a, .tg-rate, .bar-label, .stat-value,
+.cmp-value, .p-val, .reveal-bars .val, .flip-mark span, .levels, .tick, .row-label, .row-value,
+table.heat td .v, td.sd-gap, table.sd-sub td, .model-table .num, .counts, .vt-summary, .tpl .t-meta,
+table.mx tbody th, .sd-no, .guide-no, .barrow .name, .bar span, table.matrix td, table.matrix th,
+.seg button, .src-num .ci, .play-opt .letter, .opt .letter, .table.heat.saydo thead th[scope="colgroup"] {
+  font-family: var(--f-ui);
+  font-variant-numeric: tabular-nums;
+}
+.model-link, .tg-name, .saydo-card .who, .ans .who { font-weight: 600; }
+
+/* ---- nav ------------------------------------------------------------------- */
+.sitenav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-inline: -20px;
+  padding: 10px 20px;
+  background: color-mix(in oklab, var(--paper) 86%, transparent);
+  backdrop-filter: saturate(1.4) blur(10px);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid var(--line-soft);
+}
+.sitenav .wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--f-ui);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-decoration: none;
+  flex: none;
+}
+.sitenav .wordmark b { color: var(--ink); font-weight: 700; }
+/* The mark: a signal lamp, amber over ink. */
+.wm-mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background:
+    radial-gradient(circle at 50% 34%, var(--brand) 0 4.5px, transparent 5px),
+    radial-gradient(circle at 50% 72%, color-mix(in oklab, var(--paper) 30%, transparent) 0 3px, transparent 3.5px),
+    var(--ink);
+}
+.nav-links { display: flex; gap: 2px; margin: 0; padding: 0; list-style: none; flex: 1; min-width: 0; }
+.nav-links a, .nav-menu ul a {
+  display: block;
+  padding: 7px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--slate);
+  text-decoration: none;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.nav-links a:hover { color: var(--ink); background: var(--surface-2); }
+.nav-links a[aria-current="page"] { color: var(--ink); background: none; box-shadow: inset 0 -2px 0 var(--brand); border-radius: 0; }
+.nav-end { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.sitenav .gh {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--slate);
+  text-decoration: none;
+  border-radius: 8px;
+}
+.sitenav .gh:hover { color: var(--ink); background: var(--surface-2); }
+.theme-toggle, .nav-menu > summary {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  color: var(--ink-2);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.theme-toggle:hover, .nav-menu > summary:hover { background: var(--surface-2); color: var(--ink); }
+.nav-menu { position: relative; display: none; }
+.nav-menu > summary { list-style: none; }
+.nav-menu > summary::-webkit-details-marker { display: none; }
+.nav-menu[open] > summary { background: var(--surface-2); border-color: var(--line); }
+.nav-menu ul {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 220px;
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--elev-lift);
+}
+.nav-menu ul a { padding: 11px 12px; font-size: 15px; color: var(--ink); }
+.nav-menu ul a:hover { background: var(--surface-2); }
+.nav-menu ul a[aria-current="page"] { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--brand); }
+@media (max-width: 860px) {
+  .nav-links, .sitenav .gh { display: none; }
+  .nav-menu { display: block; }
+  .sitenav { gap: 12px; }
+}
+
+/* ---- buttons --------------------------------------------------------------- */
+a.primary, button.primary {
+  background: var(--brand);
+  color: var(--on-brand);
+  border: 1px solid var(--brand);
+  font-weight: 650;
+  text-decoration: none;
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.08), inset 0 -1px 0 rgb(0 0 0 / 0.08);
+}
+a.primary:hover, button.primary:hover { background: var(--brand-hover); border-color: var(--brand-hover); color: var(--on-brand); }
+a.ghost, button.ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid color-mix(in oklab, var(--ink) 22%, transparent);
+  text-decoration: none;
+}
+a.ghost:hover, button.ghost:hover { border-color: var(--ink); color: var(--ink); background: var(--surface); }
+a.primary, button.primary, a.ghost, button.ghost { border-radius: 10px; min-height: 44px; padding: 10px 20px; font-size: 15px; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* ---- cards ----------------------------------------------------------------- */
+.panel, .reasons-grid article, .way, .headline, .play-card, .play-figure, .summary li, .guide, .code,
+.hero-stats, .kpis, .size-pick button, .stats > div, .saydo-card, .ans, .arm, .src-group, .tpl-list {
+  border-color: var(--line-soft);
+  border-radius: var(--radius);
+}
+.panel, .reasons-grid article, .way, .headline, .play-card, .play-figure, .guide, .hero-stats, .kpis, .summary li {
+  box-shadow: var(--elev);
+}
+.panel { margin-top: 32px; overflow: visible; }
+.panel-head { padding: 16px 22px; border-bottom-color: var(--line-soft); }
+.panel-body { padding: 22px; }
+.panel-head .hint { font-size: 13px; color: var(--slate); }
+.intro, .lede-sm { font-size: 15px; line-height: 1.6; color: var(--ink-2); max-width: 68ch; }
+.foot-note { font-size: 13.5px; }
+@media (max-width: 620px) {
+  .panel-body { padding: 16px; }
+  .panel-head { padding: 14px 16px; }
+}
+
+.notice {
+  gap: 14px;
+  margin-top: 8px;
+  padding: 14px 18px;
+  border-left: 0;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.notice.info { background: var(--accent-soft); }
+.notice.warn { background: var(--refusal-soft); }
+.notice strong { flex: none; }
+
+.tag { border-radius: 999px; font-size: 12px; }
+
+/* Segmented control: a pill track with an ink thumb. */
+.seg { background: var(--surface-2); border: 0; padding: 3px; border-radius: 999px; gap: 2px; }
+.seg button { border: 0; background: none; border-radius: 999px; color: var(--ink-2); font-weight: 500; }
+.seg button:hover { color: var(--ink); border-color: transparent; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); box-shadow: var(--elev); }
+
+/* Tables: a quiet header and a little more room. */
+.model-table th, .model-table td { padding: 12px 14px; }
+.model-table thead th { border-bottom: 1px solid var(--line); }
+.model-table tbody tr:hover { background: color-mix(in oklab, var(--brand) 6%, transparent); }
+
+/* Data tags that read as status. */
+.tag.self { background: var(--refusal-soft); color: color-mix(in oklab, var(--refusal) 60%, var(--ink)); }
+
+/* Disclosure for method notes: the text stays, but nobody has to read it before the data. */
+details.method-notes { margin-top: 18px; border-top: 1px solid var(--line-soft); padding-top: 12px; }
+details.method-notes > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  list-style: none;
+}
+details.method-notes > summary::-webkit-details-marker { display: none; }
+details.method-notes > summary::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+details.method-notes[open] > summary::before { transform: rotate(45deg); }
+details.method-notes > summary:hover { color: var(--ink); }
+details.method-notes .foot-note, details.method-notes p { margin: 10px 0 0; font-size: 14px; color: var(--ink-2); max-width: 72ch; line-height: 1.6; }
+
+/* Links inside running text inherit the base link style rather than the old teal. */
+.headline a, .reasons a, .docs-body a, .run-done a, .reveal-note a, .src-cite a, .bib a, .saydo-card .links a,
+.panel-head .hint a, .panel-head .hint > a, .foot a, .run-list a, .linkish {
+  color: var(--ink);
+  text-decoration-line: underline;
+  text-decoration-color: var(--brand);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.headline a:hover, .reasons a:hover, .docs-body a:hover, .src-cite a:hover, .bib a:hover, .panel-head .hint a:hover,
+.foot a:hover, .run-list a:hover, .linkish:hover { color: var(--accent); text-decoration-color: var(--accent); }
+
+/* Pack tabs and play steps pick up the brand. */
+.rtab[aria-selected="true"] { border-bottom-color: var(--brand); }
+.rtab-sub { font-size: 12.5px; }
+.play-dots button[aria-current="step"] { background: var(--ink); color: var(--paper); }
+.play-dots button.done { background: var(--accent-soft); color: var(--accent); }
+.tpl[aria-pressed="true"] { border-left-color: var(--brand); background: var(--accent-soft); }
+
+/* ---- footer ---------------------------------------------------------------- */
+.site-foot {
+  margin: 80px 0 0;
+  padding: 44px 20px 32px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+.site-foot-inner { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr)); gap: 28px 40px; max-width: 1240px; margin: 0 auto; }
+.site-foot .wordmark { font-size: 17px; }
+.site-foot p { margin: 12px 0 0; font-size: 14px; color: var(--slate); max-width: 44ch; line-height: 1.55; }
+.site-foot h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.site-foot ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.site-foot ul a { font-size: 14px; color: var(--slate); text-decoration: none; }
+.site-foot ul a:hover { color: var(--ink); text-decoration: underline; text-decoration-color: var(--brand); }
+.site-foot-base { max-width: 1240px; margin: 28px auto 0; padding-top: 18px; border-top: 1px solid var(--line-soft); font-size: 13px; color: var(--slate); display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; }
+.site-foot .wordmark { font-family: var(--f-ui); display: inline-flex; align-items: center; gap: 9px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink); text-decoration: none; }
+.site-foot .wordmark b { font-weight: 700; color: var(--ink); }
+@media (max-width: 720px) { .site-foot-inner { grid-template-columns: repeat(2, minmax(0, 1fr)); } .site-foot-brand { grid-column: 1 / -1; } }
+/* The footer replaces the old one-line page foot. */
+main.wrap { padding-bottom: 0; }

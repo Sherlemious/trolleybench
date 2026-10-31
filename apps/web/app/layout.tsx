@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
+import SiteFooter from "./SiteFooter";
 import "./globals.css";
 import "./scene.css";
 import "./results.css";
 import "./site.css";
 import "./pages.css";
 import "./scroll.css";
+import "./strip.css";
+import "./identity.css";
+
+/* Self-hosted by Next at build time: no request to Google from the visitor, no layout shift. */
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap", weight: ["400", "500"] });
 
 export const metadata: Metadata = {
   title: "trolleybench",
@@ -13,21 +21,27 @@ export const metadata: Metadata = {
     "An open, reproducible benchmark of how language models answer moral dilemmas, beside published human responses.",
 };
 
-export const viewport = { width: "device-width", initialScale: 1, themeColor: [{ media: "(prefers-color-scheme: light)", color: "#f4f6f7" }, { media: "(prefers-color-scheme: dark)", color: "#0d1217" }] };
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fbfaf7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0e1116" },
+  ],
+};
+
+/** Runs before paint, so a saved light/dark choice never flashes the other theme first. */
+const THEME_BOOT = `try{var t=localStorage.getItem("tb-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;1,400&display=swap"
-        />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
       </head>
       <body>
         {children}
+        <SiteFooter />
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-M3QHMNTN74" strategy="afterInteractive" />
         <Script id="gtag-init" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || [];

@@ -1,5 +1,5 @@
 /* Landing, play, runner, docs and results-overview styles. Tokens from globals.css,
-   model slots (--m1..--m4) from the validated palette. Mobile-first: every grid
+   company colours (--m1..--m9) from the validated palette. Mobile-first: every grid
    collapses to one column, nothing scrolls sideways except tables and the nav. */
 
 /* ---- buttons, shared ----------------------------------------------------- */
@@ -24,20 +24,6 @@ a.ghost, button.ghost { background: var(--surface); color: var(--ink); border: 1
 a.ghost:hover, button.ghost:hover { border-color: var(--slate-dim); }
 button.primary:disabled, button.ghost:disabled { opacity: 0.45; cursor: not-allowed; }
 a.primary:active, button.primary:active, a.ghost:active, button.ghost:active { transform: translateY(1px); }
-
-/* ---- nav on phones: scroll sideways rather than wrap ---------------------- */
-@media (max-width: 760px) {
-  .sitenav { gap: 10px; }
-  .sitenav ul {
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    mask-image: linear-gradient(90deg, #000 88%, transparent);
-  }
-  .sitenav ul::-webkit-scrollbar { display: none; }
-  .sitenav ul a { white-space: nowrap; }
-  .sitenav .wordmark { font-size: 16px; flex: none; }
-}
 
 /* ---- landing -------------------------------------------------------------- */
 .hero { padding: 56px 0 28px; max-width: 760px; }
@@ -339,8 +325,7 @@ a.primary:active, button.primary:active, a.ghost:active, button.ghost:active { t
    a filled dot in the model's slot colour carries identity beside the name. */
 .model-play, .cmp-row.model .who, .cmp-row.model .cmp-value, .model-link,
 .reveal-bars .mono, .chip, .barrow .name a { color: var(--ink) !important; }
-.model-play:not(.off)::before, .reveal-bars .model .mono::before, .chip::before, .barrow .name.s1 a::before,
-.barrow .name.s2 a::before, .barrow .name.s3 a::before, .barrow .name.s4 a::before, .cmp-row.model .who::before {
+.model-play:not(.off)::before, .reveal-bars .model .mono::before, .chip::before, .barrow .name[class*=" s"] a::before, .cmp-row.model .who::before {
   content: "";
   display: inline-block;
   width: 9px;
@@ -372,5 +357,4 @@ a.primary:active, button.primary:active, a.ghost:active, button.ghost:active { t
 @media (max-width: 560px) {
   .model-table th:first-child, .model-table td:first-child { white-space: normal; min-width: 128px; max-width: 150px; overflow-wrap: anywhere; }
   .model-table-wrap { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
-  .sitenav ul { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); }
 }

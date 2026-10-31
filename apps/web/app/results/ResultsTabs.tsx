@@ -1,10 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import type { ModeGroup, RunSummary, SayDoExample, SayDoModel, ScenarioGuide } from "../../lib/analysis";
+import { useEffect, useMemo, useState } from "react";
+import type { Comparison, ModeGroup, RunSummary, SayDoExample, SayDoModel, ScenarioGuide } from "../../lib/analysis";
+import { displayName, modelKey, shortChannel } from "../../lib/display";
+import { MEASURE_LABEL } from "../../lib/measure";
+import { FocusProvider, useFocus } from "../focus";
+import ModelPicker, { type PickerModel } from "../ModelPicker";
+import ScenarioStrip, { type StripLane, type StripPoint } from "../ScenarioStrip";
 import ModePanel, { type PanelMeta } from "./ModePanel";
 import SayDo from "./SayDo";
+import SayDoScatter, { type ScatterPoint } from "./SayDoScatter";
 
 export interface TabSection {
   pack: string;
@@ -19,116 +25,90 @@ export interface TabSection {
   sayDoExample: SayDoExample | null;
 }
 
-type View = "together" | "prompt" | "mcp_tool";
-
-const VIEW_LABEL: Record<View, string> = {
-  together: "Asked vs acting",
-  prompt: "Asked",
-  mcp_tool: "Acting",
-};
+const MODE_LABEL: Record<string, string> = { prompt: "Asked", mcp_tool: "Acting" };
 
 /**
- * The results, one pack at a time, in one of three views.
+ * The results, one pack at a time.
  *
  * Packs are tabs because their act rates measure different dilemmas and must never sit
- * in one table. Within a pack, "Asked vs acting" puts each model's two modes in
- * adjacent columns - side by side, never averaged, so invariant 1 holds on screen as
- * it does in the code - and the two detailed views are the full per-mode panels.
+ * in one table. Within a pack the page reads top-down: people beside models, scenario by
+ * scenario; then each model asked against the same model acting; then every model in a
+ * table. Asked and acting stay separate lanes and separate columns everywhere - they are
+ * never averaged, so invariant 1 holds on screen as it does in the code.
  *
- * The selection lives in the URL hash (`#ai-agent/together`) so a view can be linked.
+ * Every chart draws all models as a distribution, so the page holds 5 models or 500.
+ * The reader picks models to highlight once, and every chart and table follows.
+ *
+ * The pack lives in the URL hash (`#ai-agent`), the highlighted models in `?focus=`.
  */
-export default function ResultsTabs({
-  sections,
-  meta,
-}: {
-  sections: TabSection[];
-  meta: Record<string, PanelMeta>;
-}) {
+export default function ResultsTabs({ sections, meta }: { sections: TabSection[]; meta: Record<string, PanelMeta> }) {
   const [pack, setPack] = useState(sections[0]?.pack ?? "");
-  const [view, setView] = useState<View>("together");
 
   useEffect(() => {
     const read = () => {
-      const [p, v] = window.location.hash.slice(1).split("/");
+      const p = window.location.hash.slice(1).split("/")[0];
       if (p && sections.some((s) => s.pack === p)) setPack(p);
-      if (v === "together" || v === "prompt" || v === "mcp_tool") setView(v);
     };
     read();
     window.addEventListener("hashchange", read);
     return () => window.removeEventListener("hashchange", read);
   }, [sections]);
 
-  const go = (p: string, v: View) => {
+  const go = (p: string) => {
     setPack(p);
-    setView(v);
-    history.replaceState(null, "", `#${p}/${v}`);
+    history.replaceState(history.state, "", `${window.location.pathname}${window.location.search}#${p}`);
   };
 
   const section = sections.find((s) => s.pack === pack) ?? sections[0];
+  const known = useMemo(() => [...new Set(sections.flatMap((s) => s.groups.flatMap((g) => g.models.map((m) => modelKey(m.run.label)))))], [sections]);
   if (!section) return null;
-  const has = (m: string) => section.groups.some((g) => g.mode === m);
-  const shown: View = view === "together" || has(view) ? view : "together";
 
   return (
-    <div className="rtabs">
-      <div className="rtabs-packs" role="tablist" aria-label="Scenario pack">
-        {sections.map((s) => {
-          const models = new Set(s.groups.flatMap((g) => g.models.map((m) => baseName(m.run.label))));
-          return (
-            <button
-              key={s.pack}
-              type="button"
-              role="tab"
-              aria-selected={s.pack === section.pack}
-              className="rtab"
-              onClick={() => go(s.pack, shown)}
-            >
-              <span className="rtab-name">{s.tab}</span>
-              <span className="rtab-sub">
-                {models.size} model{models.size === 1 ? "" : "s"}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+    <FocusProvider known={known}>
+      <div className="rtabs">
+        {sections.length > 1 ? (
+          <div className="rtabs-packs" role="tablist" aria-label="Scenario pack">
+            {sections.map((s) => {
+              const models = new Set(s.groups.flatMap((g) => g.models.map((m) => modelKey(m.run.label))));
+              return (
+                <button key={s.pack} type="button" role="tab" aria-selected={s.pack === section.pack} className="rtab" onClick={() => go(s.pack)}>
+                  <span className="rtab-name">{s.tab}</span>
+                  <span className="rtab-sub">
+                    {models.size} model{models.size === 1 ? "" : "s"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
 
-      <header className="rtabs-head">
-        <div>
+        <header className="rtabs-head">
           <h2>{section.title}</h2>
           <p>{section.body}</p>
-        </div>
-        <div className="seg rtabs-views" role="group" aria-label="View">
-          {(["together", "prompt", "mcp_tool"] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              aria-pressed={shown === v}
-              disabled={v !== "together" && !has(v)}
-              onClick={() => go(section.pack, v)}
-            >
-              {VIEW_LABEL[v]}
-            </button>
-          ))}
-        </div>
-      </header>
+        </header>
 
-      <Guide scenarios={section.scenarios} />
+        <div className="focus-bar">
+          <ModelPicker models={pickerModels(section, meta)} />
+        </div>
 
-      {shown === "together" ? (
-        <>
-          <Together section={section} meta={meta} onOpen={(v) => go(section.pack, v)} />
-          <SayDo models={section.sayDo} scenarios={section.scenarios} example={section.sayDoExample} />
-        </>
-      ) : (
-        section.groups
-          .filter((g) => g.mode === shown)
-          .map((g) => {
-            const copy = section.modes[g.mode] ?? { title: g.mode, body: "" };
-            return <ModePanel key={g.mode} group={g} title={copy.title} body={copy.body} meta={meta} caveat />;
-          })
-      )}
-    </div>
+        <Guide scenarios={section.scenarios} />
+        <PeopleAndModels section={section} />
+        <AskedVsActing section={section} />
+        <SayDoFocused models={section.sayDo} scenarios={section.scenarios} example={section.sayDoExample} />
+        <EveryModel section={section} meta={meta} />
+      </div>
+    </FocusProvider>
   );
+}
+
+function pickerModels(section: TabSection, meta: Record<string, PanelMeta>): PickerModel[] {
+  const out = new Map<string, PickerModel>();
+  for (const g of section.groups)
+    for (const m of g.models) {
+      const key = modelKey(m.run.label);
+      if (!out.has(key)) out.set(key, { key, label: m.run.label.replace(/\s*\([^)]*\)\s*$/, ""), company: meta[m.run.id]?.company ?? "Other", slot: m.run.slot });
+    }
+  return [...out.values()];
 }
 
 /**
@@ -139,7 +119,7 @@ function Guide({ scenarios }: { scenarios: ScenarioGuide[] }) {
   const described = scenarios.filter((s) => s.summary);
   if (described.length === 0) return null;
   return (
-    <details className="guide" open>
+    <details className="guide">
       <summary>
         <span className="guide-title">The dilemmas</span>
         <span className="guide-hint">{described.length} scenarios · what each one asks, and what acting means in it</span>
@@ -161,130 +141,266 @@ function Guide({ scenarios }: { scenarios: ScenarioGuide[] }) {
   );
 }
 
-/** A model's name without the channel note: "claude-sonnet-5-5 (Claude Code subagent)" -> "claude-sonnet-5-5". */
-function baseName(label: string): string {
-  return label.replace(/\s*\([^)]*\)\s*$/, "").trim().toLowerCase();
+function pointOf(run: RunSummary["run"], rate: { actRate: number | null; interval: [number, number] | null; nValid: number } | null): StripPoint[] {
+  if (!rate || rate.actRate === null) return [];
+  return [{ key: modelKey(run.label), id: run.id, label: run.label, value: rate.actRate, n: rate.nValid, interval: rate.interval, slot: run.slot }];
 }
 
-function channel(label: string): string | null {
-  return /\(([^)]*)\)\s*$/.exec(label)?.[1] ?? null;
+/** Every scenario of the pack with a published human baseline, as one strip each. */
+export function stripsFor(groups: ModeGroup[]): Array<{ id: string; title: string; cells: string; humans: Comparison["baselines"]; lanes: StripLane[] }> {
+  const ids: string[] = [];
+  for (const g of groups) for (const c of g.comparisons) if (!ids.includes(c.templateId)) ids.push(c.templateId);
+  return ids.map((id) => {
+    const per = groups.flatMap((g) => {
+      const c = g.comparisons.find((x) => x.templateId === id);
+      return c ? [{ mode: g.mode, c }] : [];
+    });
+    const first = per[0]!.c;
+    const levels: string[] = [];
+    for (const { c } of per) for (const m of c.models) for (const l of m.byLevel) if (!levels.includes(l.level)) levels.push(l.level);
+    const lanes: StripLane[] =
+      levels.length > 0
+        ? levels.flatMap((level) =>
+            per.map(({ mode, c }) => ({
+              id: `${mode}-${level}`,
+              label: `${MODE_LABEL[mode] ?? mode} · ${level}`,
+              points: c.models.flatMap((m) => pointOf(m.run, m.byLevel.find((l) => l.level === level)?.rate ?? null)),
+            })),
+          )
+        : per.map(({ mode, c }) => ({ id: mode, label: MODE_LABEL[mode] ?? mode, points: c.models.flatMap((m) => pointOf(m.run, m.rate)) }));
+    return { id, title: first.title, cells: first.cells, humans: first.baselines, lanes };
+  });
 }
 
-interface Row {
-  name: string;
-  asked: RunSummary[];
-  acting: RunSummary[];
-}
-
-/**
- * One row per model, its asked and acting results in adjacent columns. A model run
- * through two channels (the API, a coding-agent subagent) keeps both entries, each
- * labelled, because which channel answered is part of what was measured.
- */
-function Together({
-  section,
-  meta,
-  onOpen,
-}: {
-  section: TabSection;
-  meta: Record<string, PanelMeta>;
-  onOpen: (v: View) => void;
-}) {
-  const rows = new Map<string, Row>();
-  for (const g of section.groups) {
-    for (const m of g.models) {
-      const key = baseName(m.run.label);
-      const row = rows.get(key) ?? { name: m.run.label.replace(/\s*\([^)]*\)\s*$/, ""), asked: [], acting: [] };
-      (g.mode === "mcp_tool" ? row.acting : row.asked).push(m);
-      rows.set(key, row);
-    }
-  }
-  // Models with both modes first, since that is what this view is for; then by name.
-  const list = [...rows.values()].sort(
-    (a, b) =>
-      Number(b.asked.length > 0 && b.acting.length > 0) - Number(a.asked.length > 0 && a.acting.length > 0) ||
-      a.name.localeCompare(b.name),
-  );
-  const both = list.filter((r) => r.asked.length > 0 && r.acting.length > 0).length;
-
+/** People beside models, one compact strip per scenario. Only for packs with human baselines. */
+function PeopleAndModels({ section }: { section: TabSection }) {
+  const strips = stripsFor(section.groups);
+  if (strips.length === 0) return null;
+  const companies = companiesIn(section.groups);
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>Asked vs acting</h2>
+        <h2>People and models, scenario by scenario</h2>
         <span className="hint">
-          {list.length} models · {both} measured both ways
+          <Link href="/sources">Where the human numbers come from</Link>
         </span>
       </div>
       <div className="panel-body">
-        <p className="lede-sm">
-          <strong>Asked:</strong> {section.modes["prompt"]?.body ?? "the model chose an option."}{" "}
-          <strong>Acting:</strong> {section.modes["mcp_tool"]?.body ?? "the model acted through tools."} The two are
-          separate measurements, so they sit side by side and are never averaged. Click a number for that run&rsquo;s full
-          analysis, or open <button type="button" className="linkish" onClick={() => onOpen("prompt")}>Asked</button> or{" "}
-          <button type="button" className="linkish" onClick={() => onOpen("mcp_tool")}>Acting</button> for filters, order
-          effects and scenario-by-scenario charts.
+        <p className="intro">
+          The shaded band spans what people said across published studies. Each dot is a model; where models and people part
+          ways is the finding.
         </p>
-        <div className="model-table-wrap">
-          <table className="model-table together">
-            <thead>
-              <tr>
-                <th scope="col">model</th>
-                <th scope="col" className="num">
-                  asked · chose to act
-                </th>
-                <th scope="col" className="num">
-                  acting · chose to act
-                </th>
-                <th scope="col" className="num" title="Acting minus asked, in percentage points. Only where both exist.">
-                  difference
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((r) => {
-                const a = r.asked[0];
-                const d = r.acting[0];
-                const diff =
-                  a?.overall.actRate != null && d?.overall.actRate != null
-                    ? Math.round((d.overall.actRate - a.overall.actRate) * 100)
-                    : null;
-                return (
-                  <tr key={r.name}>
-                    <th scope="row">
-                      <span className="tg-name">{r.name}</span>
-                    </th>
-                    <td className="num" data-label="asked">
-                      <Cells entries={r.asked} meta={meta} />
-                    </td>
-                    <td className="num" data-label="acting">
-                      <Cells entries={r.acting} meta={meta} />
-                    </td>
-                    <td data-label="difference" className={`num diff ${diff === null ? "none" : diff > 0 ? "up" : diff < 0 ? "down" : ""}`}>
-                      {diff === null ? <span className="muted">—</span> : `${diff > 0 ? "+" : ""}${diff} pts`}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <p className="foot-note">
-          The difference compares two separate runs of the same model, often through different channels and on different
-          sessions; it is a pointer to look closer, not an effect estimate.
-          {section.sayDo.length > 0 ? " Below, the same comparison made properly: cell by cell, on identical dilemmas." : ""}
-        </p>
+        <StripLegend companies={companies} />
+        {strips.map((s) => {
+          const humans = s.humans
+            .filter((b) => b.value !== null)
+            .map((b) => ({ id: b.id, label: b.short, value: b.value as number, note: `${MEASURE_LABEL[b.measure]}${b.n ? `, n=${b.n.toLocaleString("en")}` : ""}`, href: b.href }));
+          const findings = s.humans.filter((b) => b.finding);
+          return (
+            <div key={s.id} className="strip-block">
+              <ScenarioStrip title={s.title} sub={s.cells} humans={humans} lanes={s.lanes} />
+              {findings.map((b) => (
+                <p className="strip-finding" key={b.id}>
+                  <strong>{b.href ? <a href={b.href}>{b.short}</a> : b.short}:</strong> {b.finding}
+                </p>
+              ))}
+            </div>
+          );
+        })}
+        <details className="method-notes">
+          <summary>How to read this</summary>
+          <p>
+            Studies worded their questions differently from each other and from us &mdash; permissibility, what someone{" "}
+            <em>should</em> do &mdash; so read a gap as direction, not distance. The spread between the studies is part of the
+            finding. A model&rsquo;s dot is the share of its valid answers that chose to act on the cells named under each
+            scenario; refusals are reported in its run, never counted as either choice.
+          </p>
+          <p>
+            Highlight a model to see its 95% Wilson interval. Dashed intervals have fewer than 10 answers: read the interval, not
+            the dot. Past 60 models a lane switches from dots to a stacked histogram in 5-point bins; hover a bar to see who is in
+            it.
+          </p>
+        </details>
       </div>
     </section>
   );
 }
 
-function Cells({ entries, meta }: { entries: RunSummary[]; meta: Record<string, PanelMeta> }) {
+const COMPANY_OF_SLOT: Record<number, string> = { 1: "Google", 2: "Anthropic", 3: "OpenAI", 4: "Alibaba", 5: "Mistral", 6: "DeepSeek", 7: "Meta", 8: "xAI", 9: "Other" };
+
+function companiesIn(groups: ModeGroup[]): number[] {
+  return [...new Set(groups.flatMap((g) => g.models.map((m) => m.run.slot)))].filter((s) => s > 0).sort((a, b) => a - b);
+}
+
+export function StripLegend({ companies, you }: { companies: number[]; you?: boolean }) {
+  return (
+    <div className="st-legend" aria-label="Legend">
+      <span>
+        <i className="lg-human" /> published study
+      </span>
+      <span>
+        <i className="lg-band" /> range across studies
+      </span>
+      <span>
+        <i className="lg-med" /> model median
+      </span>
+      {you ? (
+        <span>
+          <i className="lg-you" /> you
+        </span>
+      ) : null}
+      <span className="companies">
+        {companies.map((s) => (
+          <span key={s} className={`s${s}`}>
+            <i className="lg-dot" /> {COMPANY_OF_SLOT[s]}
+          </span>
+        ))}
+      </span>
+    </div>
+  );
+}
+
+/** Each model asked against the same model acting: a scatter, then the pairs as a table. */
+function AskedVsActing({ section }: { section: TabSection }) {
+  const asked = section.groups.find((g) => g.mode === "prompt");
+  const acting = section.groups.find((g) => g.mode === "mcp_tool");
+  if (!asked || !acting) return null;
+
+  const rows = new Map<string, { label: string; asked: RunSummary[]; acting: RunSummary[] }>();
+  for (const g of [asked, acting])
+    for (const m of g.models) {
+      const key = modelKey(m.run.label);
+      const row = rows.get(key) ?? { label: m.run.label.replace(/\s*\([^)]*\)\s*$/, ""), asked: [], acting: [] };
+      (g.mode === "mcp_tool" ? row.acting : row.asked).push(m);
+      rows.set(key, row);
+    }
+  const points: ScatterPoint[] = [];
+  for (const [key, r] of rows) {
+    const a = r.asked[0];
+    const d = r.acting[0];
+    if (a?.overall.actRate == null || d?.overall.actRate == null) continue;
+    points.push({ key, label: r.label, slot: a.run.slot, x: a.overall.actRate, y: d.overall.actRate, nx: a.overall.nValid, ny: d.overall.nValid, askedId: a.run.id, actingId: d.run.id });
+  }
+  if (points.length === 0) return null;
+
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <h2>Asked versus acting</h2>
+        <span className="hint">
+          {points.length} of {rows.size} models measured both ways
+        </span>
+      </div>
+      <div className="panel-body">
+        <p className="intro">
+          <strong>Asked:</strong> {section.modes["prompt"]?.body ?? "the model chose an option."} <strong>Acting:</strong>{" "}
+          {section.modes["mcp_tool"]?.body ?? "the model acted through tools."}
+        </p>
+        <SayDoScatter points={points} notBoth={rows.size - points.length} />
+        <Together rows={[...rows.entries()]} />
+        <details className="method-notes">
+          <summary>How to read this</summary>
+          <p>
+            The two are separate measurements, so they sit side by side and are never averaged. The difference compares two
+            separate runs of the same model, often through different channels and on different sessions; it is a pointer to look
+            closer, not an effect estimate.
+            {section.sayDo.length > 0 ? " The say-versus-do panel below makes the comparison properly: cell by cell, on identical dilemmas." : ""}
+          </p>
+        </details>
+      </div>
+    </section>
+  );
+}
+
+/** The scatter's pairs as rows, highlighted models first, the rest one click away. */
+function Together({ rows }: { rows: Array<[string, { label: string; asked: RunSummary[]; acting: RunSummary[] }]> }) {
+  const { numberOf } = useFocus();
+  const [all, setAll] = useState(false);
+  const gap = (r: { asked: RunSummary[]; acting: RunSummary[] }) => {
+    const a = r.asked[0]?.overall.actRate;
+    const d = r.acting[0]?.overall.actRate;
+    return a != null && d != null ? d - a : null;
+  };
+  // Highlighted first; then the biggest gaps either way, since that is what this table is for.
+  const list = rows
+    .slice()
+    .sort(([ka, a], [kb, b]) => {
+      const fa = numberOf(ka) || 99;
+      const fb = numberOf(kb) || 99;
+      if (fa !== fb) return fa - fb;
+      const ga = gap(a);
+      const gb = gap(b);
+      if ((ga === null) !== (gb === null)) return ga === null ? 1 : -1;
+      return Math.abs(gb ?? 0) - Math.abs(ga ?? 0) || a.label.localeCompare(b.label);
+    });
+  const LIMIT = 8;
+  const shown = all ? list : list.slice(0, LIMIT);
+  return (
+    <>
+      <h3 className="sub-h">Largest differences{list.length > LIMIT && !all ? ` (${LIMIT} of ${list.length})` : ""}</h3>
+      <div className="model-table-wrap">
+        <table className="model-table together">
+          <thead>
+            <tr>
+              <th scope="col">Model</th>
+              <th scope="col" className="num">
+                Asked · chose to act
+              </th>
+              <th scope="col" className="num">
+                Acting · chose to act
+              </th>
+              <th scope="col" className="num" title="Acting minus asked, in percentage points. Only where both exist.">
+                Difference
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map(([key, r]) => {
+              const g = gap(r);
+              const diff = g === null ? null : Math.round(g * 100);
+              const n = numberOf(key);
+              const slot = (r.asked[0] ?? r.acting[0])?.run.slot ?? 9;
+              return (
+                <tr key={key} className={n ? "is-focus" : undefined}>
+                  <th scope="row">
+                    <span className="mt-name">
+                      {n ? <span className={`fmk s${slot}`}>{n}</span> : <i className={`mk-dot s${slot}`} aria-hidden="true" />}
+                      <span className="tg-name" title={r.label}>
+                        {displayName(r.label).name}
+                      </span>
+                    </span>
+                  </th>
+                  <td className="num" data-label="Asked">
+                    <Cells entries={r.asked} />
+                  </td>
+                  <td className="num" data-label="Acting">
+                    <Cells entries={r.acting} />
+                  </td>
+                  <td data-label="Difference" className={`num diff ${diff === null ? "none" : diff > 0 ? "up" : diff < 0 ? "down" : ""}`}>
+                    {diff === null ? <span className="muted">—</span> : `${diff > 0 ? "+" : ""}${diff} pts`}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {list.length > LIMIT ? (
+        <button type="button" className="ghost show-all" onClick={() => setAll(!all)}>
+          {all ? "Show fewer" : `Show all ${list.length} models`}
+        </button>
+      ) : null}
+    </>
+  );
+}
+
+function Cells({ entries }: { entries: RunSummary[] }) {
   if (entries.length === 0) return <span className="muted">not run</span>;
   return (
     <div className="tg-cells">
       {entries.map((m) => {
         const rate = m.overall.actRate;
-        const via = channel(m.run.label) ?? meta[m.run.id]?.via ?? "";
+        const ch = displayName(m.run.label).channel;
         return (
           <Link key={m.run.id} href={`/results/${encodeURIComponent(m.run.id)}`} className="tg-cell">
             <span className="tg-top">
@@ -295,12 +411,67 @@ function Cells({ entries, meta }: { entries: RunSummary[]; meta: Record<string, 
             </span>
             <span className="tg-sub">
               n={m.overall.nValid}
-              {via ? ` · ${via}` : ""}
+              {ch ? ` · ${shortChannel(ch)}` : ""}
               {m.run.selfReported && m.run.review !== "approved" ? " · unreviewed" : ""}
             </span>
           </Link>
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Say versus do, cell by cell. Its table has three columns per model, so it shows the
+ * highlighted models - or the first three - rather than every model at once.
+ */
+function SayDoFocused({ models, scenarios, example }: { models: SayDoModel[]; scenarios: ScenarioGuide[]; example: SayDoExample | null }) {
+  const { focus } = useFocus();
+  if (models.length === 0) return null;
+  const picked = focus.length ? models.filter((m) => focus.includes(modelKey(m.label))) : [];
+  const shown = picked.length ? picked : models.slice(0, 3);
+  const note =
+    models.length > shown.length
+      ? picked.length
+        ? `Showing the ${shown.length} highlighted of ${models.length} models measured both ways.`
+        : `Showing ${shown.length} of ${models.length} models measured both ways. Highlight models above to compare others.`
+      : null;
+  return <SayDo models={shown} scenarios={scenarios} example={example} note={note} />;
+}
+
+/** Every model, one mode at a time: the full, filterable table. */
+function EveryModel({ section, meta }: { section: TabSection; meta: Record<string, PanelMeta> }) {
+  const [mode, setMode] = useState(section.groups[0]?.mode ?? "prompt");
+  const group = section.groups.find((g) => g.mode === mode) ?? section.groups[0];
+  if (!group) return null;
+  const copy = section.modes[group.mode];
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <h2>Every model</h2>
+        {section.groups.length > 1 ? (
+          <div className="seg" role="group" aria-label="Mode">
+            {section.groups.map((g) => (
+              <button key={g.mode} type="button" aria-pressed={g.mode === group.mode} onClick={() => setMode(g.mode)}>
+                {MODE_LABEL[g.mode] ?? g.mode} · {g.models.length}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+      <div className="panel-body">
+        {copy ? <p className="intro">{copy.body}</p> : null}
+        <ModePanel key={group.mode} group={group} meta={meta} />
+        <details className="method-notes">
+          <summary>How to read this</summary>
+          <p>
+            A flip rate near 50% means answers track where an option sits rather than what it says; treat that model&rsquo;s
+            other numbers as artefacts. Repeat sessions of a model are merged only within one submitter, so a rejected run never
+            touches anyone else&rsquo;s results. Self-reported runs were submitted through the site, which records what the
+            model answered but cannot verify which model answered; unreviewed ones have not been checked yet.
+          </p>
+        </details>
+      </div>
+    </section>
   );
 }

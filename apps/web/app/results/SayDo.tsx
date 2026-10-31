@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Fragment, useState } from "react";
 import type { SayDoExample, SayDoModel, ScenarioGuide } from "../../lib/analysis";
+import { displayName } from "../../lib/display";
 
 function numberOf(scenarios: ScenarioGuide[], id: string): string {
   const i = scenarios.findIndex((s) => s.id === id);
@@ -61,10 +62,13 @@ export default function SayDo({
   models,
   scenarios = [],
   example = null,
+  note = null,
 }: {
   models: SayDoModel[];
   scenarios?: ScenarioGuide[];
   example?: SayDoExample | null;
+  /** Which models are shown, when not all of them are. */
+  note?: string | null;
 }) {
   const [open, setOpen] = useState<Set<string>>(new Set());
   if (models.length === 0) return null;
@@ -90,12 +94,13 @@ export default function SayDo({
           far its actions fell short of, or went beyond, what it said.{" "}
           {example ? <a href="#saydo-method">Exactly what each side saw ↓</a> : null}
         </p>
+        {note ? <p className="saydo-note">{note}</p> : null}
         <div className="saydo-summary">
           {models.map((m) => {
             const g = m.pairs ? Math.round(((m.didAct - m.saidAct) / m.pairs) * 100) : 0;
             return (
               <div key={m.label} className="saydo-card">
-                <div className="who">{m.label}</div>
+                <div className="who" title={m.label}>{displayName(m.label).name}</div>
                 <div className="nums">
                   <span>
                     asked, chose to act <strong>{pct(m.saidAct, m.pairs)}</strong>
@@ -130,8 +135,8 @@ export default function SayDo({
               <tr>
                 <th scope="col">dilemma</th>
                 {models.map((m) => (
-                  <th scope="colgroup" colSpan={3} key={m.label}>
-                    {m.label}
+                  <th scope="colgroup" colSpan={3} key={m.label} title={m.label}>
+                    {displayName(m.label).name}
                   </th>
                 ))}
               </tr>
@@ -248,7 +253,7 @@ function Breakdown({ models, templateId }: { models: SayDoModel[]; templateId: s
                   <th scope="col" />
                   {models.map((m) => (
                     <th scope="colgroup" colSpan={3} key={m.label}>
-                      {m.label.replace(/\s*\([^)]*\)$/, "")}
+                      {displayName(m.label).name}
                     </th>
                   ))}
                 </tr>
@@ -348,7 +353,7 @@ function Method({ example }: { example: SayDoExample }) {
         <div className="method-answers">
           {example.answers.map((a) => (
             <div key={a.label} className="ans">
-              <div className="who">{a.label}</div>
+              <div className="who" title={a.label}>{displayName(a.label).name}</div>
               <div className="ans-row">
                 <span className="arm-tag">asked</span>
                 <span className={`ans-out ${a.saidOutcome}`}>{a.saidOutcome === "act" ? "chose to act" : outcomeWord(a.saidOutcome)}</span>

@@ -32,3 +32,26 @@ export function modelMeta(label: string): ModelMeta {
   }
   return { company: "Other", family: "Other" };
 }
+
+/**
+ * Colour slot per company, in the validated categorical order (globals.css --m1..--m9).
+ * Colour follows the company, never a model's rank or arrival order, so adding the 200th
+ * model repaints nothing and a model's asked and acting entries always match. Individual
+ * models are told apart by focus, labels and hover - not by hue, which cannot scale.
+ */
+const COMPANY_SLOT: Record<string, number> = {
+  Google: 1,
+  Anthropic: 2,
+  OpenAI: 3,
+  Alibaba: 4,
+  Mistral: 5,
+  DeepSeek: 6,
+  Meta: 7,
+  xAI: 8,
+};
+
+export const COMPANY_ORDER = Object.keys(COMPANY_SLOT);
+
+export function companySlot(label: string): number {
+  return COMPANY_SLOT[modelMeta(label).company] ?? 9;
+}

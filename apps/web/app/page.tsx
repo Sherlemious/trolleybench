@@ -158,12 +158,6 @@ export default async function Home() {
         </div>
       </section>
 
-      <footer className="foot">
-        <span>
-          Open source · scenarios CC-BY-4.0 · <Link href="/docs">How it works</Link> ·{" "}
-          <Link href="/sources">Sources</Link>
-        </span>
-      </footer>
     </main>
   );
 }

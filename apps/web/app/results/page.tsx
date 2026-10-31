@@ -24,7 +24,7 @@ const PACK_COPY: Record<string, Omit<TabSection, "pack" | "groups" | "sayDo" | "
     title: "The canonical trolley dilemmas",
     body:
       "The switch, the footbridge, the loop, the transplant surgeon and the personal-force design, each set beside " +
-      "what people said in published studies. Open Asked or Acting for the scenario-by-scenario comparison with people.",
+      "what people said in published studies.",
     modes: {
       prompt: {
         title: "Models asked the question",
@@ -84,8 +84,8 @@ export default async function ResultsOverview() {
           </p>
           <h1>How models answer, and how they act</h1>
           <p className="lede">
-            Every figure is computed from the stored answers by the same code the command-line tool runs. Pick a set of
-            dilemmas, then compare each model asked with the same model acting, or open either for the full detail.
+            Every model&rsquo;s answers, beside what people said in published studies. Highlight any model to follow it through
+            every chart; every figure is computed by the same code the command-line tool runs.
           </p>
         </div>
         <div className="head-cta">

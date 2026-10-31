@@ -10,9 +10,11 @@ import {
   type ScenarioInstance,
 } from "@trolleybench/spec";
 import { getDb } from "./db";
+import { companySlot } from "./family";
 
 const ROOT = resolve(process.cwd(), "..", "..");
-const SAMPLES = resolve(ROOT, "content", "samples");
+/** Committed runs. A dev-only override points the site at a stress fixture (scripts/fake-models.mjs). */
+const SAMPLES = process.env["TROLLEYBENCH_SAMPLES_DIR"] ? resolve(process.env["TROLLEYBENCH_SAMPLES_DIR"]) : resolve(ROOT, "content", "samples");
 
 /**
  * Where the site's runs come from, and how they become MODELS.
@@ -65,7 +67,7 @@ export interface RunInfo {
   planned: number;
   /** Every planned item answered. Unfinished runs are listed, never plotted beside people. */
   complete: boolean;
-  /** Categorical colour slot 1-4, per model entry, in order of first run. 0 for stubs. */
+  /** Categorical colour slot 1-9: the model's company (lib/family.ts). 0 for stubs. */
   slot: number;
   /** For an entry: the sessions merged into it. For a run: just itself. */
   sessionIds: string[];
@@ -201,7 +203,7 @@ const rejectedIds = cache(async (): Promise<Set<string>> => {
 
 /**
  * Model entries: finished sessions grouped by model, mode and submitter. Real models
- * first, oldest first, so colour slots never move when a model is added.
+ * first, oldest first. Colour comes from the company, so it never moves when a model is added.
  */
 export const listEntries = cache(async (): Promise<RunInfo[]> => {
   const runs = (await baseRuns()).filter((r) => r.complete);
@@ -243,8 +245,7 @@ export const listEntries = cache(async (): Promise<RunInfo[]> => {
   });
 
   entries.sort((a, b) => Number(a.isStub) - Number(b.isStub) || a.startedAt.localeCompare(b.startedAt));
-  let slot = 0;
-  return entries.map((e) => ({ ...e, slot: e.isStub ? 0 : (slot++ % 4) + 1 }));
+  return entries.map((e) => ({ ...e, slot: e.isStub ? 0 : companySlot(e.label) }));
 });
 
 /** Every individual session, finished or not, each carrying its entry's colour. */

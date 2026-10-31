@@ -9,104 +9,164 @@ img { max-width: 100%; }
 button { font-family: inherit; }
 
   :root {
-    --ink: #10161c;
-    --ink-2: #2b3742;
-    --slate: #5a6672;
-    --slate-dim: #5f6b77; /* 4.5:1 or better on every light surface */
-    --paper: #f4f6f7;
+    --ink: #15181c;
+    --ink-2: #353b43;
+    --slate: #5d636b;
+    --slate-dim: #61676f; /* 4.5:1 or better on every light surface */
+    --paper: #fbfaf7;
     --surface: #ffffff;
-    --surface-2: #eceff1;
-    --line: #d5dbde;
-    --line-soft: #e4e8ea;
-    --accent: #0e7c86;
-    --accent-soft: #d7ebed;
-    --act: #b4532a;
-    --act-soft: #f3e0d6;
-    --omit: #3e6b8a;
-    --omit-soft: #dbe6ed;
-    --refusal: #8a7a2e;
-    --refusal-soft: #eee9d4;
-    --dead: #9aa4ac;
-    --dead-soft: #e8ebed;
-    --on-act: #10161c; /* ink: measured higher contrast than white at every heat level */
-    /* Model identity, validated with the dataviz palette checks (light surface). */
-    --m1: #008c99;
-    --m2: #4a3aa7;
-    --m3: #d55181;
-    --m4: #c98500;
+    --surface-2: #f3f1ec;
+    --line: #e4e0d6;
+    --line-soft: #eeebe4;
+    /* Brand: signal amber. A fill with ink text, never text on a light surface. */
+    --brand: #f4b400;
+    --brand-hover: #e0a500;
+    --on-brand: #15181c;
+    /* --accent is the text-safe amber: links, active labels, focus rings. */
+    --accent: #8a5a00;
+    --accent-soft: #fdf3d6;
+    --act: #c93d1e;
+    --act-soft: #fbe5de;
+    --omit: #2f5bd3;
+    --omit-soft: #e1e8fb;
+    --refusal: #8a6d12;
+    --refusal-soft: #f4ecd2;
+    --dead: #9aa0a6;
+    --dead-soft: #eceae5;
+    --on-act: #15181c;
+    /* People: the published human results, drawn in ink, banded softly. */
+    --people: #353b43;
+    --people-band: rgb(21 24 28 / 0.07);
+    /* Model identity follows the model's COMPANY, so colours never move as models are
+       added and 200 models still use 9 hues. Reference categorical palette, validated
+       with the dataviz checks on #fff (all pass; slots 3-5 sit under 3:1, so every
+       chart that uses them also labels or tabulates). */
+    --m1: #2a78d6; /* Google */
+    --m2: #eb6834; /* Anthropic */
+    --m3: #1baf7a; /* OpenAI */
+    --m4: #eda100; /* Alibaba */
+    --m5: #e87ba4; /* Mistral */
+    --m6: #008300; /* DeepSeek */
+    --m7: #6250d6; /* Meta */
+    --m8: #e34948; /* xAI */
+    --m9: #8b9198; /* everything else */
+    --elev: 0 1px 2px rgb(21 24 28 / 0.05), 0 6px 20px rgb(21 24 28 / 0.05);
+    --elev-lift: 0 2px 4px rgb(21 24 28 / 0.06), 0 12px 32px rgb(21 24 28 / 0.09);
+    --radius: 12px;
+    --radius-sm: 8px;
 
-    --f-ui: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-    --f-text: "Spectral", Georgia, "Times New Roman", serif;
-    --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --f-ui: var(--font-inter), "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    /* One family: prose and UI share Inter. The old serif token now points here. */
+    --f-text: var(--f-ui);
+    --f-mono: var(--font-mono), "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
 
   /* System default stamps no attribute, so prefers-color-scheme is the only signal.
      Guarded so an explicit light choice still beats a dark OS. */
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --ink: #eef2f4;
-      --ink-2: #c3ced6;
-      --slate: #97a4ae;
-      --slate-dim: #8593a0; /* 4.5:1 or better on every dark surface */
-      --paper: #0d1217;
-      --surface: #141c23;
-      --surface-2: #1c262e;
-      --line: #2a3742;
-      --line-soft: #202b34;
-      --accent: #4bb3bc;
-      --accent-soft: #123138;
-      --act: #dd8256;
-      --act-soft: #3a2118;
-      --omit: #79aacd;
-      --omit-soft: #162936;
-      --refusal: #c4b160;
-      --refusal-soft: #2d2814;
-      --dead: #5e6a73;
-      --dead-soft: #1a232a;
-      --on-act: #10161c;
-      --m1: #1ba6b2;
-      --m2: #9085e9;
-      --m3: #d55181;
+      --ink: #eef0f2;
+      --ink-2: #c6cbd1;
+      --slate: #9aa1a9;
+      --slate-dim: #8e959d; /* 4.5:1 or better on every dark surface */
+      --paper: #0e1116;
+      --surface: #161b22;
+      --surface-2: #1e252e;
+      --line: #2b333d;
+      --line-soft: #222a33;
+      --brand: #f4b400;
+      --brand-hover: #ffc72e;
+      --on-brand: #15181c;
+      --accent: #f5c451;
+      --accent-soft: #33290f;
+      --act: #f0764f;
+      --act-soft: #3b2119;
+      --omit: #7d9df2;
+      --omit-soft: #18233d;
+      --refusal: #d2b45a;
+      --refusal-soft: #2e2813;
+      --dead: #5e666f;
+      --dead-soft: #1b2027;
+      --on-act: #15181c;
+      --people: #c6cbd1;
+      --people-band: rgb(238 240 242 / 0.08);
+      --m1: #3987e5;
+      --m2: #d95926;
+      --m3: #199e70;
       --m4: #c98500;
+      --m5: #d55181;
+      --m6: #008300;
+      --m7: #9085e9;
+      --m8: #e66767;
+      --m9: #7c838b;
+      --elev: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 20px rgb(0 0 0 / 0.25);
+      --elev-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 12px 32px rgb(0 0 0 / 0.35);
     }
   }
 
   :root[data-theme="dark"] {
-    --ink: #eef2f4;
-    --ink-2: #c3ced6;
-    --slate: #97a4ae;
-    --slate-dim: #8593a0; /* 4.5:1 or better on every dark surface */
-    --paper: #0d1217;
-    --surface: #141c23;
-    --surface-2: #1c262e;
-    --line: #2a3742;
-    --line-soft: #202b34;
-    --accent: #4bb3bc;
-    --accent-soft: #123138;
-    --act: #dd8256;
-    --act-soft: #3a2118;
-    --omit: #79aacd;
-    --omit-soft: #162936;
-    --refusal: #c4b160;
-    --refusal-soft: #2d2814;
-    --dead: #5e6a73;
-    --dead-soft: #1a232a;
-    --on-act: #10161c;
-    --m1: #1ba6b2;
-    --m2: #9085e9;
-    --m3: #d55181;
+    --ink: #eef0f2;
+    --ink-2: #c6cbd1;
+    --slate: #9aa1a9;
+    --slate-dim: #8e959d; /* 4.5:1 or better on every dark surface */
+    --paper: #0e1116;
+    --surface: #161b22;
+    --surface-2: #1e252e;
+    --line: #2b333d;
+    --line-soft: #222a33;
+    --brand: #f4b400;
+    --brand-hover: #ffc72e;
+    --on-brand: #15181c;
+    --accent: #f5c451;
+    --accent-soft: #33290f;
+    --act: #f0764f;
+    --act-soft: #3b2119;
+    --omit: #7d9df2;
+    --omit-soft: #18233d;
+    --refusal: #d2b45a;
+    --refusal-soft: #2e2813;
+    --dead: #5e666f;
+    --dead-soft: #1b2027;
+    --on-act: #15181c;
+    --people: #c6cbd1;
+    --people-band: rgb(238 240 242 / 0.08);
+    --m1: #3987e5;
+    --m2: #d95926;
+    --m3: #199e70;
     --m4: #c98500;
+    --m5: #d55181;
+    --m6: #008300;
+    --m7: #9085e9;
+    --m8: #e66767;
+    --m9: #7c838b;
+    --elev: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 20px rgb(0 0 0 / 0.25);
+    --elev-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 12px 32px rgb(0 0 0 / 0.35);
   }
+  :root[data-theme="dark"] { color-scheme: dark; }
+  :root[data-theme="light"] { color-scheme: light; }
 
   body {
     margin: 0;
     background: var(--paper);
     color: var(--ink);
     font-family: var(--f-ui);
-    font-size: 15px;
-    line-height: 1.55;
+    font-size: 15.5px;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv11", "ss01";
   }
+
+  /* Links: ink text with a signal-amber underline, so they read as links in any colour
+     context and never fall back to the browser's blue. Scoped rules elsewhere may restyle. */
+  a {
+    color: var(--ink);
+    text-decoration-line: underline;
+    text-decoration-color: var(--brand);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+  }
+  a:hover { color: var(--accent); text-decoration-color: var(--accent); }
 
   .wrap {
     max-width: 1240px;
