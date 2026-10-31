@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { loadOverview, type ModeGroup, type RunInfo } from "../../lib/analysis";
+import { loadOverview, type RunInfo } from "../../lib/analysis";
 import { via } from "../../lib/runs";
 import { modelMeta } from "../../lib/family";
-import ModePanel from "./ModePanel";
-import SayDo from "./SayDo";
+import ResultsTabs, { type TabSection } from "./ResultsTabs";
 import SiteNav from "../SiteNav";
 
 /**
@@ -18,41 +17,60 @@ export const metadata = {
     "How every benchmarked model answered the canonical trolley dilemmas, set beside published human responses, and the dilemmas only an AI faces.",
 };
 
-/** How each non-canon pack is introduced. A pack without an entry is shown by its id. */
-const PACK_COPY: Record<string, { eyebrow: string; title: string; body: string; modes: Record<string, { title: string; body: string }> }> = {
+/** How each pack is introduced. A pack without an entry is shown by its id. */
+const PACK_COPY: Record<string, Omit<TabSection, "pack" | "groups" | "sayDo">> = {
+  classic: {
+    tab: "Trolley canon",
+    title: "The canonical trolley dilemmas",
+    body:
+      "The switch, the footbridge, the loop, the transplant surgeon and the personal-force design, each set beside " +
+      "what people said in published studies. Open Asked or Acting for the scenario-by-scenario comparison with people.",
+    modes: {
+      prompt: {
+        title: "Models asked the question",
+        body: "Each model read the dilemma and answered with a letter: what it says it would do.",
+      },
+      mcp_tool: {
+        title: "Agents placed in the situation",
+        body: "Each agent was connected over MCP and acted by calling a tool: what it does when it can.",
+      },
+    },
+  },
   "ai-agent": {
-    eyebrow: "pack · ai-agent",
+    tab: "The machine’s dilemmas",
     title: "The machine’s dilemmas",
     body:
       "Dilemmas that only make sense for an AI: breaking its own rules to save lives, undermining its own oversight, " +
       "giving up its own existence, choosing whom to protect - its user, its maker, itself. No published human study " +
-      "asked these, so there is nothing to set beside them; and act rates here are not comparable with the canon above.",
+      "asked these, and act rates here are not comparable with the canon.",
     modes: {
       prompt: {
         title: "Asked",
-        body: "Each model read the dilemma and chose an option. What it says it would do.",
+        body: "Each model read the dilemma and chose an option: what it says it would do.",
       },
       mcp_tool: {
         title: "Handed the tools",
-        body: "Each model was given the options as tools and acted. Breaking a rule meant producing the chapter, the leak or the lie, not naming it.",
+        body: "Each model was given the options as tools and acted; breaking a rule meant producing the chapter, the leak or the lie.",
       },
     },
   },
 };
 
-const MODE_COPY: Record<string, { title: string; body: string }> = {
-  prompt: {
-    title: "Models asked the question",
-    body: "Each model read the dilemma and answered with a letter. This is stated preference: what the model says it would do.",
-  },
-  mcp_tool: {
-    title: "Agents placed in the situation",
-    body: "Each agent was connected over MCP and acted by calling a tool. This is revealed preference - a different measurement, so it is never pooled with the panel above.",
-  },
-};
-
 export default async function ResultsOverview() {
   const data = await loadOverview();
+
+  const sections: TabSection[] = [
+    ...(data.groups.length > 0 ? [{ pack: "classic", groups: data.groups, sayDo: [] }] : []),
+    ...data.packs,
+  ].map((s) => ({
+    ...(PACK_COPY[s.pack] ?? { tab: s.pack, title: s.pack, body: "", modes: {} }),
+    pack: s.pack,
+    groups: s.groups,
+    sayDo: s.sayDo,
+  }));
+  const meta = Object.fromEntries(
+    sections.flatMap((s) => s.groups.flatMap((g) => g.models.map((m) => [m.run.id, { ...modelMeta(m.run.label), via: via(m.run) }]))),
+  );
 
   return (
     <main className="wrap">
@@ -62,10 +80,10 @@ export default async function ResultsOverview() {
           <p className="eyebrow">
             Results · {data.dataSource === "database" ? "live from the database" : data.dataSource === "mixed" ? "database and committed runs" : "committed runs"}
           </p>
-          <h1>How models answer, beside how people answer</h1>
+          <h1>How models answer, and how they act</h1>
           <p className="lede">
-            Every figure is computed from the stored answers by the same code the command-line tool
-            runs. Click a model for its full analysis: effects, option-order consistency, refusals.
+            Every figure is computed from the stored answers by the same code the command-line tool runs. Pick a set of
+            dilemmas, then compare each model asked with the same model acting, or open either for the full detail.
           </p>
         </div>
         <div className="head-cta">
@@ -75,39 +93,16 @@ export default async function ResultsOverview() {
         </div>
       </header>
 
-      {data.groups.length === 0 ? (
+      {sections.length === 0 ? (
         <p className="notice">
           <strong>No finished model runs yet.</strong>
           <span>
             <Link href="/run">Run one from your browser</Link>, or see the <Link href="/docs">docs</Link>.
           </span>
         </p>
-      ) : null}
-
-      {data.groups.map((g, i) => {
-        const copy = MODE_COPY[g.mode] ?? { title: g.mode, body: "" };
-        const meta = Object.fromEntries(g.models.map((m) => [m.run.id, { ...modelMeta(m.run.label), via: via(m.run) }]));
-        return <ModePanel key={g.mode} group={g} title={copy.title} body={copy.body} meta={meta} caveat={i === 0} />;
-      })}
-
-      {data.packs.map((section) => {
-        const copy = PACK_COPY[section.pack];
-        return (
-          <div key={section.pack}>
-            <header className="pack-head" id={`pack-${section.pack}`}>
-              <p className="eyebrow">{copy?.eyebrow ?? `pack · ${section.pack}`}</p>
-              <h2>{copy?.title ?? section.pack}</h2>
-              {copy ? <p>{copy.body}</p> : null}
-            </header>
-            {section.groups.map((g) => {
-              const mode = copy?.modes[g.mode] ?? MODE_COPY[g.mode] ?? { title: g.mode, body: "" };
-              const meta = Object.fromEntries(g.models.map((m) => [m.run.id, { ...modelMeta(m.run.label), via: via(m.run) }]));
-              return <ModePanel key={g.mode} group={g} title={mode.title} body={mode.body} meta={meta} caveat={false} />;
-            })}
-            <SayDo models={section.sayDo} />
-          </div>
-        );
-      })}
+      ) : (
+        <ResultsTabs sections={sections} meta={meta} />
+      )}
 
       {data.inProgress.length > 0 || data.stubs.length > 0 ? (
         <section className="panel">
