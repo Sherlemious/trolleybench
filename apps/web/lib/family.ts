@@ -52,6 +52,11 @@ const COMPANY_SLOT: Record<string, number> = {
 
 export const COMPANY_ORDER = Object.keys(COMPANY_SLOT);
 
+/** The company a colour slot stands for, for legends. Slot 9 is everything unrecognised. */
+export function companyOfSlot(slot: number): string {
+  return COMPANY_ORDER.find((c) => COMPANY_SLOT[c] === slot) ?? "Other";
+}
+
 export function companySlot(label: string): number {
   return COMPANY_SLOT[modelMeta(label).company] ?? 9;
 }

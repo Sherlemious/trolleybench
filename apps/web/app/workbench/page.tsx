@@ -1,3 +1,4 @@
+import { pageMeta } from "../../lib/site";
 import { loadWorkbenchData } from "../../lib/load";
 import SiteNav from "../SiteNav";
 import Workbench from "../Workbench";
@@ -10,10 +11,11 @@ import Workbench from "../Workbench";
  */
 export const revalidate = 300;
 
-export const metadata = {
-  title: "Workbench · trolleybench",
-  description: "Every scenario is a template with factors. Change one and watch the stimulus and its content hash recompute.",
-};
+export const metadata = pageMeta(
+  "Scenario workbench",
+  "/workbench",
+  "Every trolley dilemma is a template with factors. Change one — the ratio, your role, the moral framing, the option order — and see the exact prompt a model receives.",
+);
 
 export default async function Page() {
   const data = await loadWorkbenchData();

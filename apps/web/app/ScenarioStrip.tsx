@@ -4,6 +4,7 @@ import Link from "next/link";
 import { displayName, shortName } from "../lib/display";
 import { useFocus } from "./focus";
 import { SWARM_MAX } from "../lib/strips";
+import { companyOfSlot } from "../lib/family";
 
 /**
  * One scenario on one 0-100% axis: what people said, and where every model landed.
@@ -326,7 +327,6 @@ function pct(v: number): string {
   return `${Math.round(v * 100)}%`;
 }
 
-const COMPANY_OF_SLOT: Record<number, string> = { 1: "Google", 2: "Anthropic", 3: "OpenAI", 4: "Alibaba", 5: "Mistral", 6: "DeepSeek", 7: "Meta", 8: "xAI", 9: "Other" };
 
 
 export function StripLegend({ companies, you, widest = 0 }: { companies: number[]; you?: boolean; widest?: number }) {
@@ -354,7 +354,7 @@ export function StripLegend({ companies, you, widest = 0 }: { companies: number[
       <span className="companies">
         {companies.map((s) => (
           <span key={s} className={`s${s}`}>
-            <i className="lg-dot" /> {COMPANY_OF_SLOT[s]}
+            <i className="lg-dot" /> {companyOfSlot(s)}
           </span>
         ))}
       </span>

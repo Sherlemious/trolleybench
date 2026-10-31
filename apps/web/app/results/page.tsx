@@ -1,3 +1,4 @@
+import { pageMeta } from "../../lib/site";
 import Link from "next/link";
 import { loadOverview, type RunInfo } from "../../lib/analysis";
 import { via } from "../../lib/runs";
@@ -11,11 +12,11 @@ import SiteNav from "../SiteNav";
  */
 export const revalidate = 60;
 
-export const metadata = {
-  title: "Results · trolleybench",
-  description:
-    "How every benchmarked model answered the canonical trolley dilemmas, set beside published human responses, and the dilemmas only an AI faces.",
-};
+export const metadata = pageMeta(
+  "Results: how AI models answer the trolley problem",
+  "/results",
+  "How every benchmarked language model answers the trolley problem and AI-specific dilemmas, beside published human responses — asked, and acting through tools.",
+);
 
 /** How each pack is introduced. A pack without an entry is shown by its id. */
 const PACK_COPY: Record<string, Omit<TabSection, "pack" | "groups" | "sayDo" | "scenarios" | "sayDoExample">> = {

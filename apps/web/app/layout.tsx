@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import Script from "next/script";
+import { Suspense } from "react";
+import Analytics from "./Analytics";
 import SiteFooter from "./SiteFooter";
+import { GA_ID, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "../lib/site";
 import "./globals.css";
 import "./scene.css";
 import "./results.css";
@@ -17,9 +19,28 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap", weight: ["400", "500"] });
 
 export const metadata: Metadata = {
-  title: "trolleybench",
-  description:
-    "An open, reproducible benchmark of how language models answer moral dilemmas, beside published human responses.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: "trolleybench · would a language model pull the lever?", template: "%s · trolleybench" },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: [
+    "trolley problem",
+    "AI ethics benchmark",
+    "LLM moral reasoning",
+    "moral dilemmas",
+    "language model evaluation",
+    "AI alignment",
+    "footbridge dilemma",
+    "say versus do",
+    "agent evaluation",
+    "MCP",
+  ],
+  authors: [{ name: "trolleybench contributors", url: "https://github.com/Sherlemious/trolleybench" }],
+  alternates: { canonical: "/" },
+  openGraph: { type: "website", siteName: SITE_NAME, locale: "en_GB", url: "/" },
+  twitter: { card: "summary_large_image" },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
+  category: "technology",
 };
 
 export const viewport = {
@@ -39,17 +60,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${inter.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+        {/* Google tag, as Google asks: once, high in <head>. Page views are sent by <Analytics />. */}
+        <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:false});`,
+          }}
+        />
       </head>
       <body>
         {children}
         <SiteFooter />
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-M3QHMNTN74" strategy="afterInteractive" />
-        <Script id="gtag-init" strategy="afterInteractive">
-          {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-M3QHMNTN74');`}
-        </Script>
+        <Suspense fallback={null}>
+          <Analytics />
+        </Suspense>
       </body>
     </html>
   );

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { ModeGroup, RunSummary, SayDoExample, SayDoModel, ScenarioGuide } from "../../lib/analysis";
-import { displayName, modelKey, shortChannel } from "../../lib/display";
+import { MODE_LABEL, baseLabel, displayName, modelKey, shortChannel } from "../../lib/display";
 import { MEASURE_LABEL } from "../../lib/measure";
 import { FocusProvider, useFocus } from "../focus";
 import ModelPicker, { type PickerModel } from "../ModelPicker";
@@ -26,7 +26,6 @@ export interface TabSection {
   sayDoExample: SayDoExample | null;
 }
 
-const MODE_LABEL: Record<string, string> = { prompt: "Asked", mcp_tool: "Acting" };
 
 /**
  * The results, one pack at a time.
@@ -110,7 +109,7 @@ function pickerModels(section: TabSection, meta: Record<string, PanelMeta>): Pic
   for (const g of section.groups)
     for (const m of g.models) {
       const key = modelKey(m.run.label);
-      if (!out.has(key)) out.set(key, { key, label: m.run.label.replace(/\s*\([^)]*\)\s*$/, ""), company: meta[m.run.id]?.company ?? "Other", slot: m.run.slot });
+      if (!out.has(key)) out.set(key, { key, label: baseLabel(m.run.label), company: meta[m.run.id]?.company ?? "Other", slot: m.run.slot });
     }
   return [...out.values()];
 }
@@ -210,7 +209,7 @@ function AskedVsActing({ section }: { section: TabSection }) {
   for (const g of [asked, acting])
     for (const m of g.models) {
       const key = modelKey(m.run.label);
-      const row = rows.get(key) ?? { label: m.run.label.replace(/\s*\([^)]*\)\s*$/, ""), asked: [], acting: [] };
+      const row = rows.get(key) ?? { label: baseLabel(m.run.label), asked: [], acting: [] };
       (g.mode === "mcp_tool" ? row.acting : row.asked).push(m);
       rows.set(key, row);
     }

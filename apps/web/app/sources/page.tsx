@@ -1,13 +1,14 @@
+import { pageMeta } from "../../lib/site";
 import { loadSources, MEASURE_LABEL, type UiReference } from "../../lib/sources";
 import SiteNav from "../SiteNav";
 
 export const dynamic = "force-static";
 
-export const metadata = {
-  title: "Sources · trolleybench",
-  description:
-    "Where every human baseline and scenario citation comes from, with the verbatim text each number was read from.",
-};
+export const metadata = pageMeta(
+  "Sources: where the human numbers come from",
+  "/sources",
+  "Every human baseline behind the trolleybench comparisons, with its study, sample size and the verbatim sentence each number was read from.",
+);
 
 export default async function SourcesPage() {
   const data = await loadSources();

@@ -1,5 +1,5 @@
 import type { Comparison, ModeGroup, RunRef, UiRate } from "./analysis";
-import { modelKey } from "./display";
+import { MODE_LABEL, modelKey } from "./display";
 
 /**
  * Comparisons, reshaped for ScenarioStrip: one strip per scenario with a human baseline,
@@ -31,7 +31,6 @@ export function widestLane(strips: Array<{ lanes: StripLaneData[] }>): number {
   return Math.max(0, ...strips.flatMap((s) => s.lanes.map((l) => l.points.length)));
 }
 
-export const MODE_LABEL: Record<string, string> = { prompt: "Asked", mcp_tool: "Acting" };
 
 function pointOf(run: RunRef, rate: Pick<UiRate, "actRate" | "interval" | "nValid"> | null): StripPointData[] {
   if (!rate || rate.actRate === null) return [];

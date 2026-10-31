@@ -118,3 +118,6 @@ export function shortChannel(channel: string): string {
   if (/subagent/i.test(channel)) return "subagent";
   return channel.length > 18 ? `${channel.slice(0, 17)}…` : channel;
 }
+
+/** Elicitation modes in words. The two are never pooled, so every label names one. */
+export const MODE_LABEL: Record<string, string> = { prompt: "Asked", mcp_tool: "Acting" };

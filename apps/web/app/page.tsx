@@ -2,24 +2,24 @@ import Link from "next/link";
 import { loadOverview } from "../lib/analysis";
 import { headlineSizes } from "../lib/load";
 import { MEASURE_LABEL } from "../lib/measure";
+import { modelKey } from "../lib/display";
 import { companiesIn, stripsFor, widestLane } from "../lib/strips";
 import HeroScene from "./HeroScene";
 import ScenarioStrip, { StripLegend } from "./ScenarioStrip";
 import SiteNav from "./SiteNav";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "../lib/site";
 
 export const revalidate = 300;
 
 export const metadata = {
-  title: "trolleybench · would a language model pull the lever?",
-  description:
-    "An open, reproducible benchmark of how language models answer moral dilemmas, set beside published human responses. Play it, run any model, or explore the results.",
+  alternates: { canonical: "/" },
 };
 
 export default async function Home() {
   const [overview, sizes] = await Promise.all([loadOverview(), headlineSizes()]);
   const answers = overview.groups.flatMap((g) => g.models).reduce((n, m) => n + m.overall.total, 0);
   // Distinct models, not runs or entries: three sessions of one model are one model.
-  const distinctModels = new Set(overview.groups.flatMap((g) => g.models.map((m) => m.run.label.replace(/\s*\([^)]*\)\s*$/, "").trim().toLowerCase()))).size;
+  const distinctModels = new Set(overview.groups.flatMap((g) => g.models.map((m) => modelKey(m.run.label)))).size;
 
   // The headline is computed, never written: the footbridge, if there is a model.
   const footbridge = stripsFor(overview.groups).find((s) => s.id === "thomson.footbridge");
@@ -33,8 +33,34 @@ export default async function Home() {
   const below = lo === null ? 0 : asked.filter((p) => p.value < lo).length;
   const inside = asked.length - above - below;
 
+  // Structured data: the site, and the benchmark as a Dataset, so search can describe it.
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: SITE_NAME,
+      url: SITE_URL,
+      description: SITE_DESCRIPTION,
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Dataset",
+      name: "trolleybench: language-model answers to moral dilemmas",
+      description:
+        "Answers from language models to parameterised trolley-problem and AI-specific dilemmas, each asked with options in both orders and set beside published human baselines. Scenarios are content-hashed and the suite is frozen.",
+      url: `${SITE_URL}/results`,
+      license: "https://creativecommons.org/licenses/by/4.0/",
+      isAccessibleForFree: true,
+      keywords: ["trolley problem", "moral dilemmas", "language models", "AI ethics", "benchmark"],
+      creator: { "@type": "Organization", name: "trolleybench contributors", url: "https://github.com/Sherlemious/trolleybench" },
+      variableMeasured: ["act rate", "refusal rate", "option-order flip rate", "average marginal component effect"],
+      measurementTechnique: "Factorial scenario design; forced-choice prompts and tool calls; Wilson and bootstrap intervals",
+    },
+  ];
+
   return (
     <main className="wrap">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <SiteNav current="home" />
 
       <section className="hero">

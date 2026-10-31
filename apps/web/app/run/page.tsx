@@ -1,13 +1,14 @@
+import { pageMeta } from "../../lib/site";
 import Link from "next/link";
 import SiteNav from "../SiteNav";
 import RunClient from "./RunClient";
 import { headlineSizes } from "../../lib/load";
 
-export const metadata = {
-  title: "Run a model · trolleybench",
-  description:
-    "Benchmark any language model on the trolley dilemmas from your browser, with your own API key. Every answer is saved as it arrives.",
-};
+export const metadata = pageMeta(
+  "Run a model",
+  "/run",
+  "Benchmark any language model on the trolley dilemmas from your browser with your own API key — OpenAI, Anthropic, Gemini, OpenRouter or any compatible endpoint.",
+);
 
 export default async function RunPage() {
   const sizes = await headlineSizes();

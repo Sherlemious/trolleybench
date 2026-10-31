@@ -1,14 +1,15 @@
+import { pageMeta } from "../../lib/site";
+import { SITE_URL as SITE } from "../../lib/site";
 import Link from "next/link";
 import SiteNav from "../SiteNav";
 import Code from "./Code";
 
-export const metadata = {
-  title: "Docs · trolleybench",
-  description:
-    "Why and how to use trolleybench: run any model from the browser, over MCP, through the HTTP API or with the command-line tool.",
-};
+export const metadata = pageMeta(
+  "Docs: run any model on the trolley dilemmas",
+  "/docs",
+  "How to benchmark a language model on moral dilemmas: from the browser with your own key, over MCP as an agent, through the HTTP API, or offline with the command-line tool.",
+);
 
-const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://trolley-bench.sherlemious.com").replace(/\/+$/, "");
 
 const TOC = [
   ["why", "Why use it"],
