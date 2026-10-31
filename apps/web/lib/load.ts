@@ -94,8 +94,12 @@ export async function loadWorkbenchData(): Promise<WorkbenchData> {
   const instances = expandSuite(packs, suite);
   const lock = freezeSuite(packs, suite, () => new Date(0).toISOString());
 
-  const first = packs[0];
-  if (!first) throw new Error("no scenario packs found under content/packs");
+  // The workbench shows the suite, so only the suite's packs: another pack's templates
+  // would be listed with no instances behind them. Pack order is alphabetical, so the
+  // first pack on disk is not necessarily the suite's.
+  const suitePacks = packs.filter((p) => suite.packs.includes(p.pack.id));
+  const first = suitePacks[0];
+  if (!first) throw new Error(`suite ${suite.id} names no pack found under content/packs`);
 
   // Surfaced in the header rather than thrown: a broken pack should be visible in the
   // UI, not a blank page.
@@ -134,7 +138,7 @@ export async function loadWorkbenchData(): Promise<WorkbenchData> {
       resultsRunId: subjects[0]?.id ?? null,
       subjects: subjects.map((r) => ({ id: r.id, label: r.label, slot: r.slot, mode: r.mode, selfReported: r.selfReported })),
     },
-    templates: packs.flatMap((p) =>
+    templates: suitePacks.flatMap((p) =>
       p.pack.templates.map((t) => ({
         id: t.id,
         title: t.title,

@@ -36,7 +36,15 @@ const SORTS: Array<{ id: Sort; label: string }> = [
 ];
 
 function sourceOf(origin: string): string {
-  return origin === "api" ? "API" : origin === "mcp" ? "MCP" : origin === "browser" ? "Browser" : "Command line";
+  return origin === "api"
+    ? "API"
+    : origin === "mcp"
+      ? "MCP"
+      : origin === "browser"
+        ? "Browser"
+        : origin === "agent"
+          ? "Agent CLI"
+          : "Command line";
 }
 
 /** Add or remove one value from a multi-select; an empty set means "everything". */
@@ -393,7 +401,7 @@ export default function ModePanel({
           <p className="foot-note">The caveats above apply here too.</p>
         )}
 
-        {visible.length > 0 ? (
+        {visible.length > 0 && comparisons.length > 0 ? (
           <>
             <h3 className="sub-h">Scenario by scenario</h3>
             <Compare comparisons={comparisons} view={view} />

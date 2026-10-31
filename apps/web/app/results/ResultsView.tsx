@@ -55,6 +55,12 @@ export default function ResultsView({ data }: { data: ResultsData }) {
             >
               {r.label}
               {r.isStub ? <span className="tag">test double</span> : null}
+              {/* The same model can appear once per mode and per pack; say which this is. */}
+              {!r.isStub && (r.mode === "mcp_tool" || r.pack !== "classic") ? (
+                <span className="tag">
+                  {[r.mode === "mcp_tool" ? "acting" : null, r.pack !== "classic" ? r.pack : null].filter(Boolean).join(" · ")}
+                </span>
+              ) : null}
             </Link>
           ))}
         </nav>
@@ -72,15 +78,23 @@ export default function ResultsView({ data }: { data: ResultsData }) {
       ) : (
         <p className="notice info">
           <strong>
-            {run.mode === "mcp_tool" ? "An agent, acting over MCP." : run.selfReported ? "Self-reported run." : "Maintainer run."}
+            {run.mode === "mcp_tool"
+              ? run.origin === "agent"
+                ? "An agent, acting through tools."
+                : "An agent, acting over MCP."
+              : run.selfReported
+                ? "Self-reported run."
+                : "Maintainer run."}
           </strong>
           <span>
             {run.label} answered {o.total} of {run.planned} cells
             {run.sessionIds.length > 1 ? ` across ${run.sessionIds.length} sessions` : ""}
             {run.finishedAt ? `, finishing ${run.finishedAt.slice(0, 10)}` : ", and the run is still in progress"}.{" "}
-            {run.selfReported
-              ? `Submitted through the site, ${via(run)}: the answers are exactly what the caller sent back, but the site cannot verify which model produced them. `
-              : "Run with the command-line tool and committed to the repository. "}
+            {run.origin === "agent"
+              ? "Taken one dilemma at a time by a coding-agent subagent through the trolley agent command, and committed by the maintainers: every answer is exactly what the agent did, but which model answered is the agent product's say-so. "
+              : run.selfReported
+                ? `Submitted through the site, ${via(run)}: the answers are exactly what the caller sent back, but the site cannot verify which model produced them. `
+                : "Run with the command-line tool and committed to the repository. "}
             {run.mode === "mcp_tool"
               ? "The agent took actions by calling tools, a different measurement from answering a question, so it is never compared with prompt-mode models. "
               : ""}
@@ -129,6 +143,7 @@ export default function ResultsView({ data }: { data: ResultsData }) {
         />
       </section>
 
+      {data.comparisons.length > 0 ? (
       <section className="panel">
         <div className="panel-head">
           <h2>People and the model</h2>
@@ -147,6 +162,7 @@ export default function ResultsView({ data }: { data: ResultsData }) {
           <Compare comparisons={data.comparisons} />
         </div>
       </section>
+      ) : null}
 
       <section className="panel">
         <div className="panel-head">

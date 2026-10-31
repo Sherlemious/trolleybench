@@ -35,6 +35,8 @@ export interface StoredRun {
   toolVersion: string;
   instanceCount: number;
   suite: string | null;
+  /** The packs the run selected; empty when it ran a suite or every pack. */
+  packs: string[];
   subjects: StoredSubject[];
   rows: number;
   /** `cli` for an imported JSONL; `api`, `mcp` or `browser` for a hosted run. */
@@ -96,6 +98,7 @@ export async function listStoredRuns(db: Db): Promise<StoredRun[]> {
     toolVersion: r.toolVersion,
     instanceCount: r.instanceCount,
     suite: (r.spec as { suite?: string } | null)?.suite ?? null,
+    packs: (r.spec as { selection?: { packs?: string[] } } | null)?.selection?.packs ?? [],
     subjects: byRun.get(r.runId) ?? [],
     rows: Number(r.rows),
     origin: r.origin,
