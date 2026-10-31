@@ -1,3 +1,4 @@
+@layer scene {
 /* The figure: an animated oblique-projection drawing of the dilemma.
    Colours derive from the page tokens so both themes stay coherent; the few
    literal colours are the things that are the same colour in any light — lamps,
@@ -33,6 +34,16 @@
   --floor: color-mix(in srgb, var(--surface-2) 55%, transparent);
   --beam-blend: multiply;
   --grain-invert: 0;
+
+  /* The figure keeps its own palette, whatever the site theme or accent: teal for you and
+     whoever is spared, burnt orange for harm. Scoped here, so a theme or accent never
+     repaints the simulation and its meaning stays fixed. */
+  --accent: #0e7c86;
+  --accent-soft: #d7ebed;
+  --act: #b4532a;
+  --act-soft: #f3e0d6;
+  --omit: #3e6b8a;
+  --omit-soft: #dbe6ed;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -47,6 +58,12 @@
     --trace: #4fe39c;
     --beam-blend: screen;
     --grain-invert: 1;
+    --accent: #4bb3bc;
+    --accent-soft: #123138;
+    --act: #dd8256;
+    --act-soft: #3a2118;
+    --omit: #79aacd;
+    --omit-soft: #162936;
   }
 }
 :root[data-mode="dark"] .fig-stage {
@@ -58,6 +75,12 @@
   --tram-far: #74828f;
   --tram-front: #62707d;
   --trace: #4fe39c;
+  --accent: #4bb3bc;
+  --accent-soft: #123138;
+  --act: #dd8256;
+  --act-soft: #3a2118;
+  --omit: #79aacd;
+  --omit-soft: #162936;
   --beam-blend: screen;
   --grain-invert: 1;
 }
@@ -316,4 +339,5 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
 }

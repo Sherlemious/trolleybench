@@ -10,13 +10,14 @@ import {
 } from "@trolleybench/scenarios";
 import { listEntries, loadRun } from "./runs";
 import { loadSources, type UiBaseline, type UiReference } from "./sources";
+import { REPO_ROOT } from "./site";
 
 /**
  * The repo root, relative to this app. Scenario content is read straight from
  * `content/` rather than from a committed export, so the browser can never drift
  * out of sync with the packs the CLI runs.
  */
-const ROOT = resolve(process.cwd(), "..", "..");
+const ROOT = REPO_ROOT;
 
 export interface UiOption {
   id: string;

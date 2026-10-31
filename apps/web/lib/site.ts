@@ -1,3 +1,11 @@
+import { resolve } from "node:path";
+
+/**
+ * The repo root, where content/ lives. The site runs from apps/web; tests and scripts
+ * that load this code from elsewhere set TROLLEYBENCH_ROOT.
+ */
+export const REPO_ROOT = process.env["TROLLEYBENCH_ROOT"] ?? resolve(process.cwd(), "..", "..");
+
 /** The canonical origin: metadata, the sitemap and the docs' copy-paste examples all use it. */
 export const SITE_URL = (process.env["NEXT_PUBLIC_SITE_URL"] ?? "https://trolley-bench.sherlemious.com").replace(/\/+$/, "");
 

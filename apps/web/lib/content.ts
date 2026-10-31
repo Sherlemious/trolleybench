@@ -4,6 +4,7 @@ import { cache } from "react";
 import { parse } from "yaml";
 import { z } from "zod";
 import { expandSuite, loadPackDir, loadSuiteFile } from "@trolleybench/scenarios";
+import { REPO_ROOT } from "./site";
 
 /**
  * Content-driven presentation: how the site shows each pack, and which suites it can run.
@@ -14,8 +15,7 @@ import { expandSuite, loadPackDir, loadSuiteFile } from "@trolleybench/scenarios
  * digest, an instance hash or a frozen suite.
  */
 
-/** The repo root. The site runs from apps/web; tests point this at the repo directly. */
-const ROOT = process.env["TROLLEYBENCH_ROOT"] ?? resolve(process.cwd(), "..", "..");
+const ROOT = REPO_ROOT;
 
 const Mode = z.object({ title: z.string(), body: z.string() });
 const TourStep = z.object({

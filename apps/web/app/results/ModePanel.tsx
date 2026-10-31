@@ -2,15 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ModeGroup } from "../../lib/analysis";
+import type { ClientGroup } from "../../lib/view/results";
 import { displayName, modelKey, shortChannel } from "../../lib/display";
-import type { ModelMeta } from "../../lib/family";
 import { useFocus } from "../focus";
-
-export interface PanelMeta extends ModelMeta {
-  /** "via API", "via MCP · agent": worked out on the server, where the rule lives. */
-  via: string;
-}
 
 type Sort = "act-desc" | "act-asc" | "flip" | "answers" | "name";
 /** A column header picks the sort that column offers; clicking again reverses it where it can. */
@@ -180,13 +174,7 @@ function Menu<T extends string>({
  * row of dropdown filters, sortable columns, and the first page shown with the rest one
  * click away. The scenario-by-scenario charts live above it, shared across modes.
  */
-export default function ModePanel({
-  group,
-  meta,
-}: {
-  group: ModeGroup;
-  meta: Record<string, PanelMeta>;
-}) {
+export default function ModePanel({ group }: { group: ClientGroup }) {
   const { numberOf, toggle: toggleFocus } = useFocus();
   const empty = (): Record<Facet, Set<string>> => ({ company: new Set(), family: new Set(), review: new Set(), source: new Set() });
   const [picked, setPicked] = useState<Record<Facet, Set<string>>>(empty);
@@ -198,13 +186,13 @@ export default function ModePanel({
     () =>
       group.models.map((m) => ({
         m,
-        company: meta[m.run.id]?.company ?? "Other",
-        family: meta[m.run.id]?.family ?? "Other",
+        company: m.run.company,
+        family: m.run.family,
         review: m.run.review === "approved" ? "Reviewed" : "Unreviewed",
         source: sourceOf(m.run.origin),
         name: displayName(m.run.label),
       })),
-    [group, meta],
+    [group],
   );
   type Row = (typeof rows)[number];
 
@@ -343,14 +331,14 @@ export default function ModePanel({
                       {flip === null ? "n/a" : `${Math.round(flip * 100)}%`}
                       {flip !== null && flip >= 0.4 ? " ⚠" : ""}
                     </td>
-                    <td className="num" title={`${m.run.sessionIds.length} session${m.run.sessionIds.length === 1 ? "" : "s"}`}>
+                    <td className="num" title={`${m.run.sessions} session${m.run.sessions === 1 ? "" : "s"}`}>
                       {m.overall.total}
                     </td>
                     <td className="mt-sub">
                       <span className="submitter">{m.run.submitter}</span>
                       {m.run.selfReported ? (
                         <span className={m.run.review === "approved" ? "tag ok" : "tag self"}>
-                          {m.run.review === "approved" ? "reviewed" : "unreviewed"} · {meta[m.run.id]?.via ?? ""}
+                          {m.run.review === "approved" ? "reviewed" : "unreviewed"} · {m.run.via}
                         </span>
                       ) : null}
                     </td>

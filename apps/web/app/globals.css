@@ -1,3 +1,9 @@
+/* Cascade layers, declared once in import order (and repeated in identity.css, so the
+   order holds whichever CSS chunk a production build loads first). Precedence comes
+   from the layer, not from file order, so bundling can never reorder the overrides. */
+@layer base, scene, results, site, pages, scroll, strip, identity, themes;
+
+@layer base {
 /* Design tokens and layout ported from the published workbench prototype.
    Kept as plain CSS: the palette is small, the component set is small, and a
    utility framework would obscure the theme-token discipline below. */
@@ -530,3 +536,4 @@ button { font-family: inherit; }
     max-width: 76ch;
   }
   footer.foot code { font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); }
+}

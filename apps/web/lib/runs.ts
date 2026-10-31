@@ -11,8 +11,9 @@ import {
 } from "@trolleybench/spec";
 import { getDb } from "./db";
 import { companySlot } from "./family";
+import { REPO_ROOT } from "./site";
 
-const ROOT = resolve(process.cwd(), "..", "..");
+const ROOT = REPO_ROOT;
 /** Committed runs. A dev-only override points the site at a stress fixture (scripts/fake-models.mjs). */
 const SAMPLES = process.env["TROLLEYBENCH_SAMPLES_DIR"] ? resolve(process.env["TROLLEYBENCH_SAMPLES_DIR"]) : resolve(ROOT, "content", "samples");
 

@@ -1,3 +1,4 @@
+@layer strip {
 /* Scenario strips, the model picker and the say/do scatter: the parts of the site built
    to hold any number of models. Tokens from globals.css; model colour arrives as --mc
    from the .s1..s9 company classes in results.css. */
@@ -328,9 +329,9 @@
 .menu-pop button .ml { flex: 1; }
 .menu-pop button .c { font-size: 12.5px; color: var(--slate); font-variant-numeric: tabular-nums; }
 .menu-pop button:hover, .menu-pop button:focus-visible { background: var(--surface-2); }
-.f-reset { text-decoration-color: var(--brand) !important; color: var(--ink) !important; }
-.pill { border-color: var(--line) !important; background: var(--surface) !important; }
-.pill:hover { background: var(--surface-2) !important; color: var(--ink) !important; }
+.f-reset { text-decoration-color: var(--brand); color: var(--ink); }
+.pill { border-color: var(--line); background: var(--surface); }
+.pill:hover { background: var(--surface-2); color: var(--ink); }
 
 @media (max-width: 860px) {
   .focus-bar { top: 58px; }
@@ -344,4 +345,6 @@
 /* Small-number scatter: name every dot, and say the result in a sentence. */
 .sdx-label { position: absolute; transform: translate(10px, 50%); font-size: 12.5px; font-weight: 600; color: var(--ink); white-space: nowrap; pointer-events: none; z-index: 2; text-shadow: 0 0 3px var(--surface), 0 0 3px var(--surface); }
 .sdx-label.left { transform: translate(calc(-100% - 10px), 50%); }
-.sdx-sentence { margin: 0 0 14px !important; font-size: 16px !important; font-weight: 500; line-height: 1.5 !important; color: var(--ink) !important; }
+.sdx-side p.sdx-sentence { margin: 0 0 14px; font-size: 16px; font-weight: 500; line-height: 1.5; color: var(--ink); }
+.every-modes { margin: 0 0 14px; }
+}

@@ -1,10 +1,10 @@
 import { pageMeta } from "../../lib/site";
 import Link from "next/link";
 import { loadOverview, type RunInfo } from "../../lib/analysis";
-import { via } from "../../lib/runs";
-import { modelMeta } from "../../lib/family";
-import ResultsTabs, { type TabSection } from "./ResultsTabs";
-import { packSite, packSites } from "../../lib/content";
+import { packSites } from "../../lib/content";
+import { resultsView } from "../../lib/view/results";
+import ResultsShell from "./ResultsShell";
+import { PackSection } from "./panels";
 import SiteNav from "../SiteNav";
 
 /**
@@ -23,20 +23,7 @@ export const metadata = pageMeta(
 export default async function ResultsOverview() {
   const [data, sites] = await Promise.all([loadOverview(), packSites()]);
 
-  const sections: TabSection[] = [
-    ...(data.groups.length > 0 ? [{ pack: "classic", groups: data.groups, sayDo: [], scenarios: data.classicScenarios, sayDoExample: null }] : []),
-    ...data.packs,
-  ].map((s) => ({
-    ...(({ tab, title, intro, modes }) => ({ tab, title, body: intro, modes }))(packSite(sites, s.pack)),
-    pack: s.pack,
-    groups: s.groups,
-    sayDo: s.sayDo,
-    scenarios: s.scenarios,
-    sayDoExample: s.sayDoExample,
-  }));
-  const meta = Object.fromEntries(
-    sections.flatMap((s) => s.groups.flatMap((g) => g.models.map((m) => [m.run.id, { ...modelMeta(m.run.label), via: via(m.run) }]))),
-  );
+  const view = resultsView(data, sites);
 
   return (
     <main className="wrap">
@@ -59,7 +46,7 @@ export default async function ResultsOverview() {
         </div>
       </header>
 
-      {sections.length === 0 ? (
+      {view.packs.length === 0 ? (
         <p className="notice">
           <strong>No finished model runs yet.</strong>
           <span>
@@ -67,7 +54,11 @@ export default async function ResultsOverview() {
           </span>
         </p>
       ) : (
-        <ResultsTabs sections={sections} meta={meta} />
+        <ResultsShell tabs={view.packs.map(({ pack, tab, modelCount }) => ({ pack, tab, modelCount }))} known={view.known}>
+          {view.packs.map((p) => (
+            <PackSection key={p.pack} p={p} />
+          ))}
+        </ResultsShell>
       )}
 
       {data.inProgress.length > 0 || data.stubs.length > 0 ? (

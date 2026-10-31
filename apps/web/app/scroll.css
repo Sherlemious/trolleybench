@@ -1,3 +1,4 @@
+@layer scroll {
 /* Scrollbars, drawn as rails.
 
    The page scrollbar is a short length of track: two hairline rails with faint
@@ -162,3 +163,4 @@ table.heat table.sd-sub thead th:first-child { width: 240px; }
 @media (max-width: 640px) { table.heat table.sd-sub thead th:first-child { width: 110px; } }
 /* Text in the breakdown stays within the screen while its tables scroll. */
 .sd-design, .sd-factor h5 { position: sticky; left: 0; max-width: min(72ch, calc(100vw - 110px)); }
+}

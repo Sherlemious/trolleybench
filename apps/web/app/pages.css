@@ -1,3 +1,4 @@
+@layer pages {
 /* Landing, play, runner, docs and results-overview styles. Tokens from globals.css,
    company colours (--m1..--m9) from the validated palette. Mobile-first: every grid
    collapses to one column, nothing scrolls sideways except tables and the nav. */
@@ -357,4 +358,5 @@ a.primary:active, button.primary:active, a.ghost:active, button.ghost:active { t
 @media (max-width: 560px) {
   .model-table th:first-child, .model-table td:first-child { white-space: normal; min-width: 128px; max-width: 150px; overflow-wrap: anywhere; }
   .model-table-wrap { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+}
 }

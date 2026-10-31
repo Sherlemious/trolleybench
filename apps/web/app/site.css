@@ -1,3 +1,4 @@
+@layer site {
 /* Site chrome shared by every page: the nav, page headings, headline numbers, notices.
    Tokens come from globals.css; nothing here introduces a colour of its own. */
 
@@ -271,4 +272,5 @@
   .seg button { min-height: 40px; padding: 8px 12px; }
   .replay button, .model-play { min-height: 40px; }
   .opt { min-height: 52px; }
+}
 }

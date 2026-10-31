@@ -4,8 +4,9 @@ import { NextResponse } from "next/server";
 import type { Db } from "@trolleybench/store";
 import type { Catalog } from "@trolleybench/session";
 import { getDb } from "./db";
+import { REPO_ROOT } from "./site";
 
-const ROOT = resolve(process.cwd(), "..", "..");
+const ROOT = REPO_ROOT;
 
 /**
  * Shared plumbing for the hosted-run endpoints: the HTTP API and the MCP server.

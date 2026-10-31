@@ -1,8 +1,9 @@
 import { resolve } from "node:path";
 import { loadBaselines, loadPackDir } from "@trolleybench/scenarios";
 import type { HumanBaseline, Reference } from "@trolleybench/spec";
+import { REPO_ROOT } from "./site";
 
-const ROOT = resolve(process.cwd(), "..", "..");
+const ROOT = REPO_ROOT;
 
 export interface UiReference {
   citekey: string;

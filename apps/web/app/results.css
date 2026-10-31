@@ -1,3 +1,4 @@
+@layer results {
 /* Results explorer. Uses the workbench's tokens throughout - no new palette, because
    this is the same instrument seen from a different angle, not a different product. */
 
@@ -782,4 +783,5 @@ table.sd-sub td.sd-gap { background: transparent; font-size: 12px; }
   .sd-factors { grid-template-columns: 1fr; }
   .sd-breakdown { padding: 12px; }
   table.sd-sub tbody th { min-width: 96px; }
+}
 }

@@ -1,3 +1,4 @@
+@layer themes {
 /* Themes and accents.
 
    Two independent choices, stamped on <html> by the theme menu (and by a boot script
@@ -146,3 +147,4 @@
 }
 .accent-opt[aria-checked="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
 @media (max-width: 420px) { .theme-pop { width: min(300px, calc(100vw - 32px)); right: -48px; } }
+}
