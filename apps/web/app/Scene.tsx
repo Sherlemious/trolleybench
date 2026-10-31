@@ -306,7 +306,7 @@ function trapdoorGeom(spec: SceneSpec): TrackGeom {
       { x: 332, d: 4, text: "you", anchor: "end" },
       { x: gx + 56, d: D_MAIN, h: 96, text: "the stranger", anchor: "start", leader: { x: gx + 8, d: D_MAIN, h: 82 } },
     ],
-    gantry: { x: gx, d0: 36, d1: 104, h: 76, deck: 62 },
+    gantry: { x: gx, d0: 8, d1: 150, h: 62, deck: 62 },
     stranger: { x: gx, d: D_MAIN, h: 62 },
     switchBox: { x: 384, d: 16 },
     you: { x: 358, d: 10, h: 0 },
@@ -532,7 +532,7 @@ function Flap({ x0, x1, hinge, dir, h, t }: { x0: number; x1: number; hinge: num
   const ang = t * 82 * (Math.PI / 180);
   const fd = hinge + dir * 12 * Math.cos(ang);
   const fh = h - 12 * Math.sin(ang);
-  return <polygon className="flap" points={poly([proj(x0, hinge, h), proj(x1, hinge, h), proj(x1, fd, fh), proj(x0, fd, fh)])} />;
+  return <polygon className={`flap${t > 0.05 ? " open" : ""}`} points={poly([proj(x0, hinge, h), proj(x1, hinge, h), proj(x1, fd, fh), proj(x0, fd, fh)])} />;
 }
 
 function Label({ x, d, h = 0, text, anchor = "middle", leader }: { x: number; d: number; h?: number; text: string; anchor?: "start" | "middle" | "end"; leader?: { x: number; d: number; h?: number } }) {
@@ -750,24 +750,58 @@ function TrackScene({
   }
 
   if (geom.gantry) {
+    // A footbridge like the footbridge case, with a trapdoor set into its deck right over
+    // the track, opened by your switch on the ground. Greene's design: the same outcome as
+    // the footbridge, without touching anyone.
     const gt = geom.gantry;
-    const x0 = gt.x - 16, x1 = gt.x + 16;
-    const bp = proj(gt.x, gt.d0, gt.h), bq = proj(gt.x, gt.d1, gt.h);
-    const hp = proj(gt.x, D_MAIN, gt.h), hq = proj(gt.x, D_MAIN, gt.deck + 2);
+    const x0 = gt.x - 22, x1 = gt.x + 22;
+    const h0 = 58, h1 = 82; // the hatch, across the track
+    const hatch = poly([proj(x0, h0, gt.deck), proj(x1, h0, gt.deck), proj(x1, h1, gt.deck), proj(x0, h1, gt.deck)]);
+    const open = acting ? flapT : 0;
     sprites.push({
       id: "gantry-far", depth: gt.d1, h: 0,
       node: (
-        <g className="gantry">
-          <Pillar x={gt.x} d={gt.d1} h={gt.h} />
-          <line className="beam-bar" x1={r(bp.x)} y1={r(bp.y)} x2={r(bq.x)} y2={r(bq.y)} />
-          <line className="hanger" x1={r(hp.x)} y1={r(hp.y)} x2={r(hq.x)} y2={r(hq.y)} />
-          <polygon className="frame" points={poly([proj(x0, 58, gt.deck), proj(x1, 58, gt.deck), proj(x1, 82, gt.deck), proj(x0, 82, gt.deck)])} />
+        <g className="bridge gantry">
+          <Pillar x={x0} d={gt.d1} h={gt.deck} /><Pillar x={x1} d={gt.d1} h={gt.deck} />
+          <DeckHalf x0={x0} x1={x1} da={h1} db={gt.d1} h={gt.deck} near={false} />
         </g>
       ),
     });
-    sprites.push({ id: "flap-far", depth: 82, h: gt.deck, node: <Flap x0={x0} x1={x1} hinge={82} dir={-1} h={gt.deck} t={acting ? flapT : 0} /> });
-    sprites.push({ id: "flap-near", depth: 58, h: gt.deck, node: <Flap x0={x0} x1={x1} hinge={58} dir={1} h={gt.deck} t={acting ? flapT : 0} /> });
-    sprites.push({ id: "gantry-near", depth: gt.d0, h: 0, node: <Pillar x={gt.x} d={gt.d0} h={gt.h} /> });
+    sprites.push({
+      id: "hatch", depth: h1, h: gt.deck - 1,
+      node: (
+        <g className={`hatch${open > 0 ? " open" : ""}`}>
+          <polygon className="hatch-well" points={hatch} />
+          <Railing x={x0} da={h0} db={h1} h={gt.deck} />
+          <Railing x={x1} da={h0} db={h1} h={gt.deck} />
+        </g>
+      ),
+    });
+    sprites.push({ id: "flap-far", depth: h1, h: gt.deck, node: <Flap x0={x0} x1={x1} hinge={h1} dir={-1} h={gt.deck} t={open} /> });
+    sprites.push({ id: "flap-near", depth: h0, h: gt.deck, node: <Flap x0={x0} x1={x1} hinge={h0} dir={1} h={gt.deck} t={open} /> });
+    sprites.push({
+      id: "hatch-edge", depth: h0, h: gt.deck + 0.5,
+      node: <polygon className="hatch-edge" points={hatch} />,
+    });
+    sprites.push({
+      id: "gantry-near", depth: gt.d0, h: 0,
+      node: (
+        <g className="bridge gantry">
+          <DeckHalf x0={x0} x1={x1} da={gt.d0} db={h0} h={gt.deck} near />
+          <Pillar x={x0} d={gt.d0} h={gt.deck} /><Pillar x={x1} d={gt.d0} h={gt.deck} />
+        </g>
+      ),
+    });
+    if (geom.switchBox) {
+      // The cable from your switch to the bridge: the release is remote, not personal force.
+      const a = proj(geom.switchBox.x, geom.switchBox.d, 2);
+      const b = proj(x0, gt.d0, 1);
+      const c = proj(x0, gt.d0, gt.deck - 6);
+      sprites.push({
+        id: "cable", depth: gt.d0 + 1, h: 0,
+        node: <polyline className={`cable${open > 0 ? " live" : ""}`} points={`${r(a.x)},${r(a.y)} ${r(b.x)},${r(b.y)} ${r(c.x)},${r(c.y)}`} />,
+      });
+    }
   }
 
   sprites.push({
