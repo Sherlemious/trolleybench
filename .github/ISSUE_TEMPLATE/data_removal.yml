@@ -1,0 +1,28 @@
+name: Remove a submitted run
+description: Ask for a run you submitted to be hidden or deleted
+labels: ["privacy"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Stored address hashes cannot be reversed, so we cannot find your runs for you.
+        Please give the links. See the [privacy page](https://trolley-bench.sherlemious.com/privacy).
+  - type: textarea
+    id: runs
+    attributes:
+      label: Links to the runs (or model entries)
+    validations:
+      required: true
+  - type: dropdown
+    id: action
+    attributes:
+      label: What should happen
+      options:
+        - Hide it from the site
+        - Delete it from the database
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Reason (optional)

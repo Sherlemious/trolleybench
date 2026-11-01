@@ -1,0 +1,22 @@
+name: Scenario or pack proposal
+description: Suggest a dilemma, a factor to vary, or a whole pack
+labels: ["content"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The dilemma or design
+      description: What is being asked, and which factors should vary (mechanism, harm structure, ratio, framing, language...).
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What it measures that the current packs do not
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources
+      description: Papers or datasets behind it, and any published human numbers. Say if you have read the source yourself.

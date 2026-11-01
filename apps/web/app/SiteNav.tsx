@@ -11,7 +11,7 @@ export const NAV_LINKS = [
   { href: "/sources", key: "sources", label: "Sources" },
 ] as const;
 
-export type NavKey = (typeof NAV_LINKS)[number]["key"] | "home";
+export type NavKey = (typeof NAV_LINKS)[number]["key"] | "home" | "privacy";
 
 export const REPO = "https://github.com/Sherlemious/trolleybench";
 
