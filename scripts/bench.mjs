@@ -66,7 +66,7 @@ if (databaseUrl()) {
   trolley(["db", "import", out]);
 } else {
   console.log("\nNo DATABASE_URL set, so the run was not imported. The site still shows it,");
-  console.log("from the file. To import later: pnpm db:seed");
+  console.log(`from the file. To import later: node apps/cli/dist/index.js db import ${out}`);
 }
 
 console.log(`\ndone. Commit ${out} and its .manifest.json to publish it on the site.`);

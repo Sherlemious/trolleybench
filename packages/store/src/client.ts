@@ -88,6 +88,8 @@ export function connect(options: ConnectOptions = {}): Connection {
       idle_timeout: 20,
       connect_timeout: 15,
       prepare: false,
+      // Idempotent migrations raise "already exists, skipping" NOTICEs on every re-run.
+      onnotice: () => {},
       ssl: url.includes("localhost") || url.includes("127.0.0.1") ? false : "require",
     });
   } catch (cause) {

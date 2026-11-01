@@ -187,8 +187,7 @@ node apps/cli/dist/index.js analyze content/samples/`}</Code>
             <p>
               <code>pnpm bench</code> runs the frozen canon suite, writes the run into{" "}
               <code>content/samples/</code> where the site picks it up, and imports it into the database
-              when <code>DATABASE_URL</code> is set. <code>pnpm db:seed</code> imports every committed
-              run.
+              when <code>DATABASE_URL</code> is set.
             </p>
           </section>
 
