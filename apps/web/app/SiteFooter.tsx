@@ -47,7 +47,9 @@ export default function SiteFooter() {
         </nav>
       </div>
       <div className="site-foot-base">
-        <span>Code Apache-2.0 · scenarios CC-BY-4.0</span>
+        <span>
+          Code Apache-2.0 · scenarios CC-BY-4.0 · <Link href="/privacy">Privacy</Link>
+        </span>
         <span>Refusals are outcomes, never dropped. Modes are never pooled.</span>
       </div>
     </footer>

@@ -15,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/workbench`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/docs`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/sources`, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${SITE_URL}/privacy`, changeFrequency: "yearly", priority: 0.2 },
   ];
   const entries = (await listEntries()).filter((e) => !e.isStub);
   return [
