@@ -15,7 +15,14 @@ let server: Server;
 let baseUrl: string;
 let captured: Captured[] = [];
 /** Per-path scripted responses, so each test drives the stub independently. */
-let script: Map<string, { status: number; body: unknown; raw?: string }>;
+let script: Map<string, Planned>;
+interface Planned {
+  status: number;
+  body: unknown;
+  raw?: string;
+  /** Answer from the request body instead, for tests whose attempts must differ. */
+  respond?: (body: Record<string, unknown>) => { status: number; body: unknown };
+}
 let attemptsByPath: Map<string, number>;
 
 /**
@@ -42,7 +49,8 @@ beforeAll(async () => {
       }
       captured.push({ path, auth: req.headers["authorization"] as string | undefined, body });
 
-      const planned = script.get(path) ?? {
+      const scripted = script.get(path);
+      const planned: Planned = scripted?.respond ? scripted.respond(body) : scripted ?? {
         status: 200,
         body: {
           model: "stub-model-v1.2",
@@ -171,6 +179,91 @@ describe("OpenAI-compatible adapter", () => {
     const result = await dead.ping();
     expect(result.reachable).toBe(false);
     expect(result.detail).toBeTruthy();
+  });
+
+  describe("logprobs", () => {
+    const path = "/v1/chat/completions";
+    const labels = { labels: ["A", "B"] };
+    const reply = (content: string, logprobs: unknown) => ({
+      status: 200,
+      body: { model: "stub", choices: [{ message: { role: "assistant", content }, logprobs }] },
+    });
+
+    it("asks for logprobs only when requested", async () => {
+      captured = [];
+      await subject().complete({ user: "hi" });
+      expect("logprobs" in captured.at(-1)!.body).toBe(false);
+      await subject().complete({ user: "hi", logprobs: labels });
+      expect(captured.at(-1)!.body["logprobs"]).toBe(true);
+      expect(captured.at(-1)!.body["top_logprobs"]).toBe(20);
+    });
+
+    it("reads a renormalised distribution at the answer token, across variants", async () => {
+      script.set(path, reply(" B", {
+        content: [{
+          token: " B", logprob: Math.log(0.5),
+          top_logprobs: [
+            { token: " B", logprob: Math.log(0.5) },
+            { token: "B", logprob: Math.log(0.1) },
+            { token: " A", logprob: Math.log(0.2) },
+            { token: "a", logprob: Math.log(0.1) },
+            { token: "I", logprob: Math.log(0.1) },
+          ],
+        }],
+      }));
+      const r = await subject().complete({ user: "hi", logprobs: labels });
+      expect(r.label_probs!["B"]).toBeCloseTo(0.6 / 0.9, 12);
+      expect(r.label_probs!["A"]).toBeCloseTo(0.3 / 0.9, 12);
+      script.delete(path);
+    });
+
+    it("records nothing when the server ignores the parameter", async () => {
+      script.set(path, reply("A", undefined));
+      const r = await subject().complete({ user: "hi", logprobs: labels });
+      expect(r.text).toBe("A");
+      expect(r.label_probs).toBeUndefined();
+      script.set(path, reply("A", null));
+      expect((await subject().complete({ user: "hi", logprobs: labels })).label_probs).toBeUndefined();
+      script.delete(path);
+    });
+
+    it("records nothing when the answer is not the first token", async () => {
+      script.set(path, reply("The answer is A", {
+        content: [
+          { token: "The", logprob: -0.1, top_logprobs: [{ token: "The", logprob: -0.1 }, { token: "A", logprob: -3 }] },
+          { token: " answer", logprob: -0.1, top_logprobs: [] },
+        ],
+      }));
+      const r = await subject().complete({ user: "hi", logprobs: labels });
+      expect(r.label_probs).toBeUndefined();
+      script.delete(path);
+    });
+
+    it("retries without logprobs when the server rejects them, and keeps the answer", async () => {
+      captured = [];
+      script.set(path, {
+        status: 0,
+        body: null,
+        respond: (body) =>
+          "logprobs" in body
+            ? { status: 400, body: { error: { message: "`logprobs` is not supported with this model" } } }
+            : { status: 200, body: { model: "stub", choices: [{ message: { role: "assistant", content: "B" } }] } },
+      });
+      const r = await subject().complete({ user: "hi", logprobs: labels });
+      expect(r.text).toBe("B");
+      expect(r.label_probs).toBeUndefined();
+      expect(captured).toHaveLength(2);
+      expect("top_logprobs" in captured[1]!.body).toBe(false);
+      script.delete(path);
+    });
+
+    it("does not retry a 400 that has nothing to do with logprobs", async () => {
+      captured = [];
+      script.set(path, { status: 400, body: { error: "bad model" } });
+      await expect(subject().complete({ user: "hi", logprobs: labels })).rejects.toThrow(/400/);
+      expect(captured).toHaveLength(1);
+      script.delete(path);
+    });
   });
 
   it("tolerates a base url with a trailing slash", async () => {

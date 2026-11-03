@@ -11,6 +11,7 @@ import {
   type ToolCall,
   toolParameters,
 } from "./types.js";
+import { TOP_LOGPROBS, labelProbsAt, openAIPositions, rejectsLogprobs } from "./logprobs.js";
 
 /**
  * The workhorse adapter. One implementation covers Ollama, vLLM, LM Studio,
@@ -54,13 +55,23 @@ export class OpenAICompatibleSubject implements Subject {
       }));
       payload["tool_choice"] = "auto";
     }
+    const wantLogprobs = Boolean(request.logprobs?.labels.length);
+    if (wantLogprobs) {
+      payload["logprobs"] = true;
+      payload["top_logprobs"] = TOP_LOGPROBS;
+    }
 
     const url = `${trimSlash(this.baseUrl)}/chat/completions`;
-    const { status, body, text } = await fetchJson(url, {
-      method: "POST",
-      headers: this.headers(),
-      body: JSON.stringify(payload),
-    });
+    const post = (p: Record<string, unknown>) =>
+      fetchJson(url, { method: "POST", headers: this.headers(), body: JSON.stringify(p) });
+    let { status, body, text } = await post(payload);
+
+    // Some servers (Groq, for one) reject the logprobs parameters outright. The answer
+    // is still worth having: retry once without them, and the row records no P(act).
+    if (wantLogprobs && rejectsLogprobs(status, text)) {
+      const { logprobs: _l, top_logprobs: _t, ...without } = payload;
+      ({ status, body, text } = await post(without));
+    }
 
     if (status !== 200) {
       const detail = text.slice(0, 400);
@@ -72,6 +83,7 @@ export class OpenAICompatibleSubject implements Subject {
       | {
           choices?: Array<{
             message?: { content?: unknown; tool_calls?: Array<{ function?: { name?: unknown; arguments?: unknown } }> };
+            logprobs?: unknown;
           }>;
           model?: unknown;
           usage?: Record<string, unknown>;
@@ -95,6 +107,10 @@ export class OpenAICompatibleSubject implements Subject {
         input: numberOr(parsed?.usage?.["prompt_tokens"]),
         output: numberOr(parsed?.usage?.["completion_tokens"]),
       },
+      // Ignored, absent or unreadable logprobs leave this undefined - never a guess.
+      label_probs: wantLogprobs
+        ? labelProbsAt(openAIPositions(parsed?.choices?.[0]?.logprobs), request.logprobs!.labels)
+        : undefined,
       raw: body,
     };
   }
