@@ -31,6 +31,7 @@ const instances = expandInstances(await loadPackDir(resolve("content/packs")), v
   packs: sel?.packs,
   templates: sel?.templates,
   tags: sel?.tags,
+  levels: sel?.levels,
   max_instances: sel?.max_instances,
   seed: spec.seed,
 });

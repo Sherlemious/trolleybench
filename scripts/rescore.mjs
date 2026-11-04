@@ -35,6 +35,7 @@ for (const file of files) {
       packs: manifest.spec.selection?.packs,
       templates: manifest.spec.selection?.templates,
       tags: manifest.spec.selection?.tags,
+      levels: manifest.spec.selection?.levels,
       max_instances: manifest.spec.selection?.max_instances,
       seed: manifest.spec.seed,
     }).map((i) => [i.hash, i]),

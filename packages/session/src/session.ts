@@ -8,7 +8,7 @@ import {
   type SuiteDef,
 } from "@trolleybench/spec";
 import { contentHash, mulberry32, seedFrom, toolNameFor } from "@trolleybench/engine";
-import { expandSuite, type LoadedPack } from "@trolleybench/scenarios";
+import { expandSuite, selectionOf, type LoadedPack } from "@trolleybench/scenarios";
 import { LETTERS, extractAction, extractChoice } from "@trolleybench/scoring";
 import { buildPrompt } from "@trolleybench/runner";
 import { schema, type Db } from "@trolleybench/store";
@@ -139,7 +139,7 @@ export async function startRun(db: Db, catalog: Catalog, input: StartInput): Pro
     id: runId,
     created_at: now.toISOString(),
     suite: `${suite.id}@${suite.version}`,
-    selection: { packs: suite.packs, templates: suite.templates, tags: suite.tags },
+    selection: selectionOf(suite),
     subjects: [{ id: subjectId, kind: "model", provider: "hosted", model, params: {} }],
     variations,
     repetitions: 1,

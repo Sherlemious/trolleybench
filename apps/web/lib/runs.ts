@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 import { readFile, readdir } from "node:fs/promises";
 import { cache } from "react";
-import { expandInstances, loadPackDir } from "@trolleybench/scenarios";
+import { expandInstances, filterForManifest, loadPackDir, loadSuiteDir } from "@trolleybench/scenarios";
 import { readResults } from "@trolleybench/runner";
 import {
   RunManifest,
@@ -317,17 +317,12 @@ const loadSession = cache(async (id: string): Promise<RunSource | null> => {
   // quietly missing arms.
   const packs = await packsOnce();
   const spec = file.manifest.spec;
-  const expanded = expandInstances(packs, spec.variations, {
-    packs: spec.selection?.packs,
-    templates: spec.selection?.templates,
-    tags: spec.selection?.tags,
-    max_instances: spec.selection?.max_instances,
-    seed: spec.seed,
-  });
+  const expanded = expandInstances(packs, spec.variations, filterForManifest(spec, await suitesOnce()));
   return { info, rows: loaded.rows, instances: new Map(expanded.map((i) => [i.hash, i])) };
 });
 
 export const packsOnce = cache(() => loadPackDir(resolve(ROOT, "content", "packs")));
+export const suitesOnce = cache(() => loadSuiteDir(resolve(ROOT, "content", "suites")));
 
 function entryId(r: BaseRun & { submitter: string }): string {
   const who = r.submitter === "maintainers" ? "maint" : r.submitter.replace("community ", "c");
