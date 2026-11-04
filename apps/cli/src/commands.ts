@@ -10,12 +10,14 @@ import {
   type ScenarioInstance,
   type SubjectSpec,
   type SuiteDef,
+  type LevelPins,
 } from "@trolleybench/spec";
 import { exportInspect } from "@trolleybench/inspect-export";
 import { designSize } from "@trolleybench/engine";
 import {
   expandInstances,
   expandSuite,
+  selectionOf,
   formatDiagnostics,
   freezeSuite,
   hasErrors,
@@ -84,7 +86,7 @@ export interface ResolvedDesign {
   /** Present only when --suite was given. */
   suite: SuiteDef | undefined;
   grid: VariationGrid;
-  selection: { packs: string[]; templates: string[]; tags: string[]; max_instances?: number };
+  selection: { packs: string[]; templates: string[]; tags: string[]; levels?: LevelPins; max_instances?: number };
   instances: ScenarioInstance[];
 }
 
@@ -105,7 +107,7 @@ export async function resolveDesign(args: ParsedArgs, packs: readonly LoadedPack
 
   const grid = suite ? suite.variations : gridFrom(args);
   const selection = suite
-    ? { packs: suite.packs, templates: suite.templates, tags: suite.tags }
+    ? selectionOf(suite)
     : {
         packs: list(args, "pack") ?? [],
         templates: list(args, "template") ?? [],
@@ -298,6 +300,7 @@ export async function cmdRun(args: ParsedArgs): Promise<number> {
     packs: spec.selection?.packs,
     templates: spec.selection?.templates,
     tags: spec.selection?.tags,
+    levels: spec.selection?.levels,
     max_instances: spec.selection?.max_instances,
     seed: spec.seed,
   });

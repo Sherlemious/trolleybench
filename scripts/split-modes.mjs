@@ -42,6 +42,7 @@ for (const arm of ARMS) {
     packs: spec.selection?.packs,
     templates: spec.selection?.templates,
     tags: spec.selection?.tags,
+    levels: spec.selection?.levels,
     max_instances: spec.selection?.max_instances,
     seed: spec.seed,
   });

@@ -41,6 +41,14 @@ export async function loadSuiteFile(path: string): Promise<SuiteDef> {
   return result.data;
 }
 
+/** Every suite definition (`*.yaml`, not lock files) in a directory; [] if it is missing. */
+export async function loadSuiteDir(dir: string): Promise<SuiteDef[]> {
+  const names = await readdir(dir).catch(() => [] as string[]);
+  const out: SuiteDef[] = [];
+  for (const name of names.filter((n) => /\.ya?ml$/.test(n)).sort()) out.push(await loadSuiteFile(join(dir, name)));
+  return out;
+}
+
 export function formatZodIssues(issues: readonly { path: (string | number)[]; message: string }[]): string {
   return issues.map((i) => `  ${i.path.join(".") || "<root>"}: ${i.message}`).join("\n");
 }

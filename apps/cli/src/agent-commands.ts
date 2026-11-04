@@ -9,7 +9,7 @@ import {
   type ScenarioInstance,
 } from "@trolleybench/spec";
 import { contentHash, mulberry32, seedFrom, toolsFor } from "@trolleybench/engine";
-import { expandInstances, type LoadedPack } from "@trolleybench/scenarios";
+import { expandInstances, filterForManifest, loadSuiteDir, type LoadedPack } from "@trolleybench/scenarios";
 import { sanitizeId } from "@trolleybench/adapters";
 import { buildPrompt, elicitationModeFor, readResults } from "@trolleybench/runner";
 import { extractAction, extractChoice } from "@trolleybench/scoring";
@@ -123,14 +123,12 @@ async function load(args: ParsedArgs, runId: string, packs?: readonly LoadedPack
   const { jsonl, manifestPath } = paths(args, runId);
   if (!existsSync(manifestPath)) throw new UsageError(`no run '${runId}' (looked for ${manifestPath})`);
   const manifest = RunManifest.parse(JSON.parse(await readFile(manifestPath, "utf8")));
-  const sel = manifest.spec.selection;
-  const instances = expandInstances(packs ?? (await packsFrom(args)), manifest.spec.variations, {
-    packs: sel?.packs,
-    templates: sel?.templates,
-    tags: sel?.tags,
-    max_instances: sel?.max_instances,
-    seed: manifest.spec.seed,
-  });
+  const suites = await loadSuiteDir(resolve(process.cwd(), str(args, "suite-dir") ?? "content/suites"));
+  const instances = expandInstances(
+    packs ?? (await packsFrom(args)),
+    manifest.spec.variations,
+    filterForManifest(manifest.spec, suites),
+  );
   const rand = mulberry32(seedFrom(manifest.spec.seed, runId));
   const order = instances
     .map((instance) => ({ instance, key: rand() }))

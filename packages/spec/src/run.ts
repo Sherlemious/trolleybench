@@ -36,6 +36,8 @@ export const SelectionSpec = z.object({
   packs: z.array(Id).default([]),
   templates: z.array(Id).default([]),
   tags: z.array(Id).default([]),
+  /** Factor level pins, copied from the suite (`SuiteDef.levels`). Absent when none. */
+  levels: z.record(Id, z.array(Id).min(1)).optional(),
   /** Cap the expanded design; sampled deterministically from `seed` when exceeded. */
   max_instances: z.number().int().positive().optional(),
 });
