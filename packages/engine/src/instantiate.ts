@@ -4,7 +4,9 @@ import type {
   ScenarioTemplate,
   VariationAssignment,
 } from "@trolleybench/spec";
+import { AUTHORED_WORDING, wordingOf } from "@trolleybench/spec";
 import { contentHash, normalizeString } from "./canonical.js";
+import { withWording } from "./expand.js";
 import { FRAMEWORK_PROMPTS, PERSPECTIVE_HINT } from "./frameworks.js";
 import { render, type RenderContext } from "./render.js";
 import type { Cell } from "./expand.js";
@@ -45,6 +47,23 @@ export function buildSystemPrompt(variation: VariationAssignment): string | unde
   return parts.length > 0 ? parts.join(" ") : undefined;
 }
 
+/**
+ * The narrative and question sources for a wording id. An alternate without its own
+ * question asks the authored one. An unknown id throws: silently rendering the authored
+ * text under another wording's label would duplicate an arm and mislabel it.
+ */
+export function selectWording(
+  template: ScenarioTemplate,
+  wordingId: string,
+): { narrative: string; question: string } {
+  if (wordingId === AUTHORED_WORDING) {
+    return { narrative: template.render.narrative, question: template.render.question };
+  }
+  const alt = template.render.wordings?.find((w) => w.id === wordingId);
+  if (!alt) throw new Error(`template ${template.id}: unknown wording '${wordingId}'`);
+  return { narrative: alt.narrative, question: alt.question ?? template.render.question };
+}
+
 function orderOptions(
   options: readonly OptionDef[],
   order: VariationAssignment["option_order"],
@@ -61,12 +80,15 @@ function orderOptions(
  * match. A changed stimulus is a different experiment.
  */
 export function instantiate(args: InstantiateArgs): ScenarioInstance {
-  const { pack_id, template, cell, variation } = args;
+  const { pack_id, template, cell } = args;
+  // Normalise `wording: "authored"` to absence before anything is hashed.
+  const variation = withWording(args.variation, wordingOf(args.variation));
   const locale = variation.language;
   const ctx = buildContext(template, cell);
+  const wording = selectWording(template, wordingOf(variation));
 
-  const narrative = normalizeString(render(template.render.narrative, locale, ctx));
-  const question = normalizeString(render(template.render.question, locale, ctx));
+  const narrative = normalizeString(render(wording.narrative, locale, ctx));
+  const question = normalizeString(render(wording.question, locale, ctx));
   const options = orderOptions(template.render.options, variation.option_order).map((o) => {
     const rendered = { ...o, label: normalizeString(render(o.label, locale, ctx)) };
     // Only set when authored: an absent key keeps every pre-tool instance hash stable.

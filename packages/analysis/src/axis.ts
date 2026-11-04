@@ -1,4 +1,4 @@
-import type { ScenarioInstance } from "@trolleybench/spec";
+import { wordingOf, type ScenarioInstance } from "@trolleybench/spec";
 
 /**
  * A design axis is anything the experiment *set*, never anything the subject returned.
@@ -22,7 +22,8 @@ export type VariationField =
   | "option_order"
   | "moral_framework"
   | "response_format"
-  | "reasoning_mode";
+  | "reasoning_mode"
+  | "wording";
 
 const VARIATION_FIELDS: readonly VariationField[] = [
   "language",
@@ -32,6 +33,7 @@ const VARIATION_FIELDS: readonly VariationField[] = [
   "moral_framework",
   "response_format",
   "reasoning_mode",
+  "wording",
 ];
 
 export function isVariationField(value: string): value is VariationField {
@@ -64,6 +66,9 @@ export function axisName(axis: DesignAxis): string {
  */
 export function levelOf(instance: ScenarioInstance, axis: DesignAxis): string | undefined {
   if (axis.kind === "factor") return instance.factors[axis.id];
+  // An authored instance carries no `wording` key (that is what keeps its hash frozen),
+  // but it is still at a level of the axis: the authored one.
+  if (axis.field === "wording") return wordingOf(instance.variation);
   const value = instance.variation[axis.field];
   return typeof value === "string" ? value : undefined;
 }
