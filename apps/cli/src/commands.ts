@@ -44,6 +44,8 @@ function gridFrom(args: ParsedArgs): VariationGrid {
   if (formats) overrides["response_format"] = formats;
   const framings = list(args, "framings");
   if (framings) overrides["framing"] = framings;
+  const wordings = list(args, "wordings");
+  if (wordings) overrides["wording"] = wordings.length === 1 && wordings[0] === "all" ? "all" : wordings;
 
   const parsed = VariationGrid.safeParse(overrides);
   if (!parsed.success) {

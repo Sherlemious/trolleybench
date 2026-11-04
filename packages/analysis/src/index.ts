@@ -11,3 +11,4 @@ export * from "./steerability.js";
 export * from "./cells.js";
 export * from "./say-do.js";
 export * from "./probability.js";
+export * from "./wording.js";
